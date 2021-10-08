@@ -20,8 +20,7 @@ class AttendanceController {
       if (attendance) {
         let clockOut = moment(req.body.clockIn)
           .startOf("day")
-          .utc(true)
-          .add(20, "hours");
+          .utc(true);
         let diff = moment(clockOut).diff(moment(attendance.clockIn), "hours");
         let payload = {
           clockOut: clockOut,
@@ -43,8 +42,7 @@ class AttendanceController {
           ...req.body,
           clockIn: moment(req.body.clockIn)
             .startOf("day")
-            .utc(true)
-            .add(10, "hours"),
+            .utc(true),
           workDate: moment().startOf("day").utc(true).toISOString(),
         });
         await newAttendance.save();
