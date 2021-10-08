@@ -13,14 +13,15 @@ class AttendanceController {
   async create(req, res) {
        try {
         let criteria = {
-        workDate: moment().startOf("day").utc(true).toISOString(),
+        workDate: moment().startOf("day").utc(true).add('days'),
         userId: token.userId,
       };
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
         let clockOut = moment(req.body.clockIn)
           .startOf("day")
-          .utc(true);
+          .utc(true)
+          .toISOString();
         let diff = moment(clockOut).diff(moment(attendance.clockIn), "hours");
         let payload = {
           clockOut: clockOut,
@@ -42,7 +43,8 @@ class AttendanceController {
           ...req.body,
           clockIn: moment(req.body.clockIn)
             .startOf("day")
-            .utc(true),
+            .utc(true)
+            .toISOString(),
           workDate: moment().startOf("day").utc(true).toISOString(),
         });
         await newAttendance.save();
