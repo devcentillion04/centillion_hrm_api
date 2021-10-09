@@ -8,17 +8,17 @@ class UserController {
   catch(error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-  async update(res, req) {
+  async update(req, res) {
     try {
       let payload = {
         ...req.body,
       };
-      let attendence = await UserSchema.findOneAndUpdate(
+      let user = await UserSchema.findOneAndUpdate(
         { _id: req.params.id },
         payload,
         { upsert: true, new: true }
       );
-      return res.status(200).json({ success: true, data: attendence });
+      return res.status(200).json({ success: true, data: user });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
