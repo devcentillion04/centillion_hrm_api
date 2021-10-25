@@ -1,5 +1,6 @@
 const yup = require("yup");
-
+const phoneRegExp =
+  /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
 const login = yup.object().shape({
   email: yup
     .string()
@@ -19,9 +20,11 @@ const register = yup.object().shape({
     .required("Password is required")
     .min(6, "Password minimum 6 character is required"),
   mobileno: yup
-    .number()
-    .min(10, "Minimum 10 digit Required")
-    .required("Mobile number required"),
+    .string()
+    .matches(phoneRegExp, "Mobile Number is invalid")
+    .test("Only 10 number", (value) => value.length === 10)
+    .required("number is required")
+    .required("Mobile Number is required"),
 });
 
 module.exports = {
