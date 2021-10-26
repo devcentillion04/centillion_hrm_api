@@ -8,6 +8,11 @@ const employeeSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    projectId: [{ type: Schema.Types.ObjectId, ref: "projects" }],
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
