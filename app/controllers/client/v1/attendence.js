@@ -1,6 +1,8 @@
 const moment = require("moment");
 const { token } = require("morgan");
+const jwt = require("jsonwebtoken");
 const Attendance = require("../../../models/attendence");
+const { UserSchema } = require("../../../models/user");
 
 class AttendanceController {
   async index(req, res) {
@@ -60,7 +62,7 @@ class AttendanceController {
   async show(req, res) {
     try {
       const { id } = req.params;
-      let data = await Attendance.findById(id);
+      let data = await Attendance.findById(id).populate("userId");
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

@@ -17,7 +17,6 @@ class employeeController {
         userId: req.body.userId,
         projectId: req.body.projectId,
       };
-      console.log(payload);
       let employee = new employeeSchema(payload);
       await employee.save();
       return res.status(200).json({ success: true, data: employee });
