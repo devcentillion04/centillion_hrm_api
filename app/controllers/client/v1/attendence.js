@@ -4,16 +4,16 @@ const Attendance = require("../../../models/attendence");
 
 class AttendanceController {
   async index(req, res) {
-   let attendence = await Attendance.find(req.params.id);
+    let attendence = await Attendance.find(req.params.id);
     return res.status(200).json({ success: true, data: attendence });
   }
   catch(error) {
     return res.status(500).json({ success: false, message: error.message });
   }
   async create(req, res) {
-       try {
-        let criteria = {
-        workDate: moment().startOf("day").utc(true).add('days'),
+    try {
+      let criteria = {
+        workDate: moment().startOf("day").utc(true).add("days"),
         userId: token.userId,
       };
       let attendance = await Attendance.findOne(criteria);
@@ -26,7 +26,7 @@ class AttendanceController {
         let payload = {
           clockOut: clockOut,
           workingHours: diff,
-          userId:req.currentUser._id
+          userId: req.currentUser._id,
         };
 
         let updateAttendance = await Attendance.findOneAndUpdate(

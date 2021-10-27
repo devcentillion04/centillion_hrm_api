@@ -1,10 +1,11 @@
-const { findById, findOneAndUpdate } = require("../../../models/employee");
 const employeeSchema = require("../../../models/employee");
 
 class employeeController {
   async index(req, res) {
     try {
-      let employee = await employeeSchema.find(req.params.id);
+      let employee = await employeeSchema.find({
+        isDeleted: false,
+      });
       return res.status(200).json({ success: true, data: employee });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -18,7 +19,7 @@ class employeeController {
       };
       console.log(payload);
       let employee = new employeeSchema(payload);
-      employee.save();
+      await employee.save();
       return res.status(200).json({ success: true, data: employee });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -63,9 +64,9 @@ class employeeController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
-  async delete(res, req) {
+  async delete(req, res) {
     try {
-      await findOneAndUpdate(
+      await employeeSchema.findOneAndUpdate(
         { _id: req.params.id },
         { isDeleted: true },
         { upsert: true, new: true }
