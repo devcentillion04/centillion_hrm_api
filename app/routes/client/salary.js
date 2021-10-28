@@ -1,10 +1,11 @@
 const express = require("express");
 const salary = require("../../controllers/client/v1/salary");
 const router = express.Router();
+const auth = require("../../middleware/authorization");
 
-router.get("/", salary.index);
-router.post("/create", salary.create);
-router.get("/:id", salary.show);
-router.put("/delete/:id", salary.delete);
+router.get("/", auth, salary.index);
+router.post("/create", auth, salary.create);
+router.get("/:id", auth, salary.show);
+router.put("/delete/:id", auth, salary.delete);
 
 module.exports = router;

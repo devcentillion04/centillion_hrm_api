@@ -1,4 +1,5 @@
 const auth_schema = require("./auth");
+const user_schema = require("./user");
 const validate = (schema) => {
   return async (req, res, next) => {
     try {
@@ -13,4 +14,5 @@ const validate = (schema) => {
 module.exports = {
   validate,
   auth_schema,
+  user_schema,
 };

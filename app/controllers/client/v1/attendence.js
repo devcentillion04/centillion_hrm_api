@@ -1,8 +1,6 @@
 const moment = require("moment");
 const { token } = require("morgan");
-const jwt = require("jsonwebtoken");
 const Attendance = require("../../../models/attendence");
-const { UserSchema } = require("../../../models/user");
 
 class AttendanceController {
   async index(req, res) {
