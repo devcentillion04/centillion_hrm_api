@@ -11,8 +11,21 @@ const AttendanceSchema = new Schema(
     projectId: {
       type: String,
     },
+    entry: [
+      {
+        In: {
+          type: Date,
+        },
+        Out: {
+          type: Date,
+        },
+      },
+    ],
     clockIn: {
       type: Date,
+      default: new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Calcutta",
+      }),
     },
     clockOut: {
       type: Date,

@@ -28,23 +28,29 @@ class AttendanceController {
           workingHours: diff,
           userId: req.currentUser._id,
         };
-
+        let entryId = await Attendance.findOne({
+          entry: { $elemMatch: { _id: req.body._id } },
+        });
+        console.log("entryId", entryId);
         let updateAttendance = await Attendance.findOneAndUpdate(
-          criteria,
-          payload,
           {
+            criteria,
+            payload,
             upsert: true,
             new: true,
-          }
+            entryId,
+          },
+          { $push: { entry: { Out: moment() } } }
         );
         return res.status(200).json({ success: true, data: updateAttendance });
       } else {
+        let date = moment().utcOffset("+05:30");
         let newAttendance = new Attendance({
           ...req.body,
-          clockIn: moment(req.body.clockIn)
-            .startOf("day")
-            .utc(true)
-            .toISOString(),
+          clockIn: date,
+          entry: {
+            In: moment(),
+          },
           workDate: moment().startOf("day").utc(true).toISOString(),
         });
         await newAttendance.save();
