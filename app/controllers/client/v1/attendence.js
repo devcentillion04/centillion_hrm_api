@@ -18,33 +18,37 @@ class AttendanceController {
       };
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
-        let clockOut = moment(req.body.clockIn)
+        let date = moment(req.body.clockIn)
           .startOf("day")
           .utc(true)
           .toISOString();
-        let diff = moment(clockOut).diff(moment(attendance.clockIn), "hours");
+        let diff = moment(date).diff(moment(attendance.clockIn), "hours");
         let payload = {
-          clockOut: clockOut,
           workingHours: diff,
           userId: req.currentUser._id,
         };
+
         let entryId = await Attendance.findOne({
-          entry: { $elemMatch: { _id: req.body._id } },
+          $push:{entry: {In:{ $elemMatch: { _id: req.body._id } }}}
         });
-        console.log("entryId", entryId);
+        let out = await Attendance.findOne({Out:req.params._id})
+        console.log(out)
         let updateAttendance = await Attendance.findOneAndUpdate(
           {
             criteria,
+            clockOut:date,
             payload,
             upsert: true,
             new: true,
-            entryId,
+            $push:{
+              entry: {
+              Out: moment(),
+            }},
           },
-          { $push: { entry: { Out: moment() } } }
         );
         return res.status(200).json({ success: true, data: updateAttendance });
       } else {
-        let date = moment().utcOffset("+05:30");
+        let date = moment(req.body.clockIn).utcOffset("+05:30");
         let newAttendance = new Attendance({
           ...req.body,
           clockIn: date,
@@ -66,7 +70,7 @@ class AttendanceController {
   async show(req, res) {
     try {
       const { id } = req.params;
-      let data = await Attendance.findById(id).populate("userId");
+      let data = await Attendance.findById(id).populate({ path:"userId"}).populate({path:"userId",select:"email"});
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

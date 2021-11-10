@@ -23,9 +23,6 @@ const AttendanceSchema = new Schema(
     ],
     clockIn: {
       type: Date,
-      default: new Date().toLocaleString("en-US", {
-        timeZone: "Asia/Calcutta",
-      }),
     },
     clockOut: {
       type: Date,
