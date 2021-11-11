@@ -1,4 +1,4 @@
-const moment = require("moment");
+const moment = require("moment-timezone");
 const { token } = require("morgan");
 const Attendance = require("../../../models/attendence");
 
@@ -16,44 +16,69 @@ class AttendanceController {
         workDate: moment().startOf("day").utc(true).add("days"),
         userId: token.userId,
       };
+      
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
-        let date = moment(req.body.clockIn)
-          .startOf("day")
+        let date = moment()
           .utc(true)
-          .toISOString();
-        let diff = moment(date).diff(moment(attendance.clockIn), "hours");
-        let payload = {
-          workingHours: diff,
-          userId: req.currentUser._id,
-        };
-
-        let entryId = await Attendance.findOne({
-          $push:{entry: {In:{ $elemMatch: { _id: req.body._id } }}}
-        });
-        let out = await Attendance.findOne({Out:req.params._id})
-        console.log(out)
+          let payload={
+            userId: req.currentUser._id,
+            clockOut:date,
+      }
+      let dataTime;
+        let b = attendance.entry
+        let abvc=b[b.length-1]
+        if(abvc?.Out != undefined){
+          dataTime = {
+            $push:{
+              entry:{ 
+                In: moment().utc(true)
+              }
+            }
+          }
+        }
+        else if(abvc?.In != undefined){
+          dataTime = {
+            $push:{
+              entry:{ 
+                Out: moment().utc(true)
+              }
+            }
+          }
+        }
+        else{
+          dataTime = {
+            $push:{
+              entry:{ 
+                In: moment().utc(true)
+              }
+            }
+          }
+        }
+        let diff = moment(abvc?.Out ).format("hh:mm:ss").diff(abvc?.In, "hours"); 
+        if(abvc?.Out){
+          let b = diff + moment(abvc?.Out ).diff(abvc?.In, "hours"); 
+          console.log(b)
+        }else{
+          console.log("sajaslkakldakld")
+        }          
         let updateAttendance = await Attendance.findOneAndUpdate(
           {
             criteria,
-            clockOut:date,
             payload,
+            workingHours: diff,
             upsert: true,
             new: true,
-            $push:{
-              entry: {
-              Out: moment(),
-            }},
+            ...dataTime,
           },
         );
         return res.status(200).json({ success: true, data: updateAttendance });
       } else {
-        let date = moment(req.body.clockIn).utcOffset("+05:30");
+        let date = moment().utc(true)
         let newAttendance = new Attendance({
-          ...req.body,
           clockIn: date,
           entry: {
-            In: moment(),
+            In: moment().utc(true),
           },
           workDate: moment().startOf("day").utc(true).toISOString(),
         });
