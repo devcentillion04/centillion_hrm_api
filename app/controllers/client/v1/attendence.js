@@ -55,9 +55,9 @@ class AttendanceController {
             }
           }
         }
-        let diff = moment(abvc?.Out ).format("hh:mm:ss").diff(abvc?.In, "hours"); 
+        let diff = moment(abvc?.Out ).diff(abvc?.In, "seconds"); 
         if(abvc?.Out){
-          let b = diff + moment(abvc?.Out ).diff(abvc?.In, "hours"); 
+          let b = diff + moment(abvc?.Out ).diff(abvc?.In, "seconds"); 
           console.log(b)
         }else{
           console.log("sajaslkakldakld")
