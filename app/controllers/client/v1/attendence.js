@@ -17,59 +17,61 @@ class AttendanceController {
       };
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
-        let date = moment().utc(true)
+        let date = moment().utc(true);
         let payload = {
           userId: req.currentUser._id,
           clockOut: date,
-        }
+        };
         let dataTime;
         let time;
-        let b = attendance.entry
-        let abvc = b[b.length - 1]
+        let b = attendance.entry;
+        let abvc = b[b.length - 1];
         if (abvc?.Out != undefined) {
           dataTime = {
             $push: {
               entry: {
-                In: moment().utc(true)
-              }
-            }
-          }
-
-        }
-        else if (abvc?.In != undefined) {
+                In: moment().utc(true),
+              },
+            },
+          };
+        } else if (abvc?.In != undefined) {
           dataTime = {
             $push: {
               entry: {
-                Out: moment().utc(true)
-              }
-            }
+                Out: moment().utc(true),
+              },
+            },
+          };
+          if (attendance.workingHours) {
+            time =
+              moment(dataTime.$push.entry.Out).diff(abvc?.In, "milliseconds") +
+              attendance.workingHours;
+          } else {
+            time = moment(dataTime.$push.entry.Out).diff(
+              abvc?.In,
+              "milliseconds"
+            );
           }
-          time = moment().diff(moment(abvc?.In), "minutes")
-          console.log("time", time)
-        }
-        else {
+        } else {
           dataTime = {
             $push: {
               entry: {
-                In: moment().utc(true)
-              }
-            }
-          }
+                In: moment().utc(true),
+              },
+            },
+          };
         }
-        let diff = moment(abvc?.Out).diff(abvc?.In, "minutes");
-        let updateAttendance = await Attendance.findOneAndUpdate(
-          {
-            criteria,
-            ...payload,
-            workingHours: diff,
-            upsert: true,
-            new: true,
-            ...dataTime,
-          },
-        );
+        let updateAttendance = await Attendance.findOneAndUpdate({
+          criteria,
+          ...payload,
+          workingHours: time,
+          upsert: true,
+          new: true,
+          ...dataTime,
+        });
         return res.status(200).json({ success: true, data: updateAttendance });
       } else {
-        let date = moment().utc(true)
+        let date = moment().utc(true);
         let newAttendance = new Attendance({
           clockIn: date,
           entry: {
@@ -90,7 +92,9 @@ class AttendanceController {
   async show(req, res) {
     try {
       const { id } = req.params;
-      let data = await Attendance.findById(id).populate({ path: "userId" }).populate({ path: "userId", select: "email" });
+      let data = await Attendance.findById(id)
+        .populate({ path: "userId" })
+        .populate({ path: "userId", select: "email" });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
