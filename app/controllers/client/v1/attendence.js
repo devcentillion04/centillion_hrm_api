@@ -14,12 +14,12 @@ class AttendanceController {
       let criteria = {
         workDate: moment().startOf("day").utc(true).add("days"),
         ...req.params._id,
+        userId: req.currentUser._id,
       };
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
         let date = moment().utc(true);
         let payload = {
-          userId: req.currentUser._id,
           clockOut: date,
         };
         let dataTime;
@@ -73,6 +73,7 @@ class AttendanceController {
       } else {
         let date = moment().utc(true);
         let newAttendance = new Attendance({
+          userId: req.currentUser._id,
           clockIn: date,
           entry: {
             In: moment().utc(true),
