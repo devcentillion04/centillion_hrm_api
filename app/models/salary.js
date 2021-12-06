@@ -11,8 +11,9 @@ const SalarySchema = new Schema({
     type: mongoose.Types.ObjectId,
     ref: "attendance",
   },
-  salary: {
+  workingDays: {
     type: Number,
+    default: 0,
   },
   isDeleted: {
     type: Boolean,

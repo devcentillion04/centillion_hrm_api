@@ -88,6 +88,10 @@ const UserSchema = new Schema(
       enum: ["PARTTIME", "FULLTIME"],
       default: "FULLTIME",
     },
+    salary: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );

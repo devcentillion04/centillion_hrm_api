@@ -13,9 +13,11 @@ class AttendanceController {
     try {
       let criteria = {
         workDate: moment().startOf("day").utc(true).add("days"),
-        ...req.params._id,
         userId: req.currentUser._id,
       };
+
+      // let getId = await Attendance.findOne(userId);
+      // console.log(getId);
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
         let date = moment().utc(true);
@@ -51,33 +53,34 @@ class AttendanceController {
               abvc?.In,
               "milliseconds"
             );
+            // let duration = moment.duration(a);
+            // time = {
+            //   hours: duration.hours(),
+            //   minutes: duration.minutes(),
+            //   seconds: duration.seconds(),
+            //   milliseconds: duration.milliseconds(),
+            // };
           }
-        } else {
-          dataTime = {
-            $push: {
-              entry: {
-                In: moment().utc(true),
-              },
-            },
-          };
         }
-        let updateAttendance = await Attendance.findOneAndUpdate({
-          criteria,
-          ...payload,
-          workingHours: time,
-          upsert: true,
-          new: true,
-          ...dataTime,
-        });
+        let updateAttendance = await Attendance.findOneAndUpdate(
+          { _id: attendance._id },
+          { ...payload, workingHours: time, ...dataTime },
+          {
+            upsert: true,
+            new: false,
+          }
+        );
         return res.status(200).json({ success: true, data: updateAttendance });
       } else {
         let date = moment().utc(true);
+
         let newAttendance = new Attendance({
           userId: req.currentUser._id,
           clockIn: date,
           entry: {
             In: moment().utc(true),
           },
+
           workDate: moment().startOf("day").utc(true).toISOString(),
         });
         await newAttendance.save();

@@ -1,4 +1,3 @@
-const salary = require("../../../models/salary");
 const SalarySchema = require("../../../models/salary");
 
 class SalaryController {
@@ -18,8 +17,11 @@ class SalaryController {
       let payload = {
         ...req.body,
         userId: req.body.userId,
+      };
+      let a = {
         attendanceId: req.body.attendanceId,
       };
+
       let salary = new SalarySchema(payload);
       await salary.save();
       return res.status(200).json({ success: true, data: salary });
@@ -30,12 +32,11 @@ class SalaryController {
   async show(req, res) {
     try {
       let salary = await SalarySchema.findById(req.params.id)
-        .populate("userId", "email")
+        .populate("userId", "email salary")
         .populate("attendanceId");
-      let total =
-        salary.attendanceId.totalHours - salary.attendanceId.workingHours;
-      let totalSalary = salary.salary - total * 30;
-      console.log(totalSalary);
+      // let total =
+      //   salary.attendanceId.totalHours - salary.attendanceId.workingHours;
+      // let totalSalary = salary.salary - total * 30;
       return res.status(200).json({ success: true, data: salary });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

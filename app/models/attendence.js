@@ -39,7 +39,9 @@ const AttendanceSchema = new Schema(
       type: Date,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+  }
 );
 
 AttendanceSchema.plugin(paginate);

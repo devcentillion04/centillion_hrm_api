@@ -6,6 +6,6 @@ const { validate, user_schema } = require("../../middleware/validation");
 
 router.get("/", auth, User.index);
 router.get("/:id", auth, User.show);
-router.put("/update/:id", auth, [validate(user_schema.user)], User.update);
+router.put("/update/:id", auth, User.update);
 
 module.exports = router;
