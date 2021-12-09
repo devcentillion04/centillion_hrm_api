@@ -6,7 +6,7 @@ const cors = require("cors");
 require("dotenv").config({ path: ".env" });
 require("./app/config/db/connection");
 const clientRoutes = require("./app/routes/index");
-// const adminRoutes = require("./app/routes/admin");
+const adminRoutes = require("./app/routes/admin");
 const app = express();
 const router = express.Router();
 app.use(json());
@@ -16,7 +16,7 @@ app.use(cors());
 app.use(`/api/${process.env.VERSION}`, router);
 app.use(express.static("public"));
 
-// router.use("/admin", adminRoutes);
+router.use("/admin", adminRoutes);
 router.use("/", clientRoutes);
 
 app.listen(process.env.PORT, () => {
