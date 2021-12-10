@@ -5,24 +5,23 @@ let secretOrKey = process.env.JWT_SECRET;
 class AuthController {
   async register(req, res) {
     try {
-      let {email} = req.body;
-      const emailFind = await UserSchema.findOne({email})
-      if(emailFind){
+      let { email } = req.body;
+      const emailFind = await UserSchema.findOne({ email });
+      if (emailFind) {
         throw new Error("email is already taken");
-      }else{
-      let payload = {
-        ...req.body,
-        password: hashSync(req.body.password, genSaltSync(10)),
-      };
-      const user = new UserSchema(payload);
-      await user.save();
-      return res.status(200).json({ success: true, data: user });
-    }
+      } else {
+        let payload = {
+          ...req.body,
+          password: hashSync(req.body.password, genSaltSync(10)),
+        };
+        const user = new UserSchema(payload);
+        await user.save();
+        return res.status(200).json({ success: true, data: user });
+      }
     } catch (error) {
       console.log("error0", error);
       return res.status(500).json({ success: false, message: error.message });
     }
- 
   }
   async login(req, res) {
     try {
