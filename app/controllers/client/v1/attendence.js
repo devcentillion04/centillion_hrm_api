@@ -3,7 +3,13 @@ const Attendance = require("../../../models/attendence");
 
 class AttendanceController {
   async index(req, res) {
-    let attendence = await Attendance.find(req.params.id);
+    let user = {};
+    if (req.body.userId) {
+      user = { ...req.params._id, userId: req.body.userId };
+    } else {
+      user = { ...req.params._id };
+    }
+    let attendence = await Attendance.find(user);
     return res.status(200).json({ success: true, data: attendence });
   }
   catch(error) {
