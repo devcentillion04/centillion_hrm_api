@@ -53,13 +53,6 @@ class AttendanceController {
               abvc?.In,
               "milliseconds"
             );
-            // let duration = moment.duration(a);
-            // time = {
-            //   hours: duration.hours(),
-            //   minutes: duration.minutes(),
-            //   seconds: duration.seconds(),
-            //   milliseconds: duration.milliseconds(),
-            // };
           }
         }
         let updateAttendance = await Attendance.findOneAndUpdate(

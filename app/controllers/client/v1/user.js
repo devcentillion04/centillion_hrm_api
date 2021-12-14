@@ -8,6 +8,7 @@ class UserController {
   catch(error) {
     return res.status(500).json({ success: false, message: error.message });
   }
+
   async update(req, res) {
     try {
       let payload = {
