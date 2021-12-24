@@ -2,7 +2,72 @@ const { UserSchema } = require("../../../models/user");
 const { genSaltSync, hashSync, compareSync } = require("bcrypt");
 const jwt = require("jsonwebtoken");
 let secretOrKey = process.env.JWT_SECRET;
+const { CONSTANTS } = require("../../../constants/index.js");
+// const { userService } = require("../../../services/index.js");
+const { userQuery } = require("../../../services/admin/userServices");
+const {
+  RESPONSE_MESSAGE: { ADMINUSER, FAILEDRESPONSE },
+  STATUS_CODE: { SUCCESS, FAILED },
+  MAILSUBJECT: { REGISTERMAIL },
+} = CONSTANTS;
 class AuthController {
+  async adminUserCreate(req, res) {
+    try {
+      const { email, name } = req.body;
+      const checkExistingUser = await userQuery({
+        email,
+        name,
+        orQuery: true,
+      });
+      if (checkExistingUser) {
+        throw new Error(ADMINUSER.USERAVAILABLE);
+      }
+      const { hashedPassword, salt } = await hashSync(
+        req.body.password,
+        genSaltSync(10)
+      );
+      const insetObj = {
+        ...req.body,
+        hashedPassword,
+        salt,
+      };
+
+      const adminUserSave = new UserSchema(insetObj);
+      // const saveResponse = await adminUserSave.save();
+      // if (saveResponse) {
+      //   const html = `
+      // 	Hello ${saveResponse?.name} ,
+      // 		Password: ${passwordGenerate}`;
+
+      // Send Confirm Account Email
+      // const sendEmail = await sendEmail(
+      //   email,
+      //   process.env.SENDGRID_EMAIL,
+      //   REGISTERMAIL,
+      //   html
+      // );
+      // if (sendEmail[0].statusCode != 202) {
+      //   throw new Error("mail is not send");
+      // }
+      // res.status(200).send({
+      //   success: true,
+      //   msg: "Admin Created",
+      //   data: [],
+      // });
+      // }
+      console.log(adminUserSave);
+      res.status(200).send({
+        success: true,
+        msg: "Admin Created",
+        data: [],
+      });
+    } catch (error) {
+      res.status(FAILED).json({
+        success: false,
+        error: error.message || FAILEDRESPONSE,
+      });
+    }
+  }
   async register(req, res) {
     try {
       let { email } = req.body;

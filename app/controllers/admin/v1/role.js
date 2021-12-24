@@ -1,144 +1,138 @@
-import { RoleSchema } from '../../models';
-import {
-	adminUserService,
-	permissionService,
-	roleService,
-} from '../../mongoServices';
-import { CONSTANTS } from '../../constants';
-import { errorLogger } from '../../utils';
-import { isValidObjectId } from 'mongoose';
+const { RoleSchema } = require("../../../models/admin/role.js");
+const { CONSTANTS } = require("../../../constants/index.js");
 const {
-	RESPONSE_MESSAGE: { ROLE, FAILEDRESPONSE, INVALIDOBJECTID },
-	STATUS_CODE: { SUCCESS, FAILED },
+  findAllQuery,
+  deleteOneQuery,
+  updateOneQuery,
+} = require("../../../services/admin/roleServices.js");
+const { isValidObjectId } = require("mongoose");
+const { userQuery } = require("../../../services/admin/userServices.js");
+const { findAll } = require("../../../services/admin/permissionService.js");
+
+const {
+  RESPONSE_MESSAGE: { ROLE, FAILEDRESPONSE, INVALIDOBJECTID },
+  STATUS_CODE: { SUCCESS, FAILED },
 } = CONSTANTS;
 const createRole = async (req, res) => {
-	try {
-		const {
-			currentUser: { _id },
-		} = req;
-		const insertObj = {
-			...req.body,
-			createdBy: _id,
-		};
-		const findPermissions = await permissionService.findByIdQuery(
-			req.body?.permissions,
-		);
-		if (findPermissions === false) {
-			throw new Error('some permission is not avalible');
-		}
-
-		const saveRole = new RoleSchema(insertObj);
-		const saveResponse = await saveRole.save();
-
-		if (saveResponse) {
-			res.status(SUCCESS).send({
-				success: true,
-				msg: ROLE.CREATESUCCESS,
-				data: [],
-			});
-		} else {
-			throw new Error(ROLE.CREATEFAILED);
-		}
-	} catch (error) {
-		errorLogger(error.message, req.originalUrl, req.ip);
-		res.status(FAILED).json({
-			success: false,
-			error: error.message || FAILEDRESPONSE,
-		});
-	}
+  try {
+    const insertObj = {
+      ...req.body,
+      createdBy: req.body.createdBy,
+    };
+    const findPermissions = await findAll({
+      permission: req.body.permission,
+    });
+    if (findPermissions === false) {
+      throw new Error("some permission is not avalible");
+    }
+    const saveRole = new RoleSchema(insertObj);
+    const saveResponse = await saveRole.save();
+    if (saveResponse) {
+      return res
+        .status(200)
+        .json({ success: true, msg: "Role Created", data: saveResponse });
+    } else {
+      throw new Error(ROLE.CREATEFAILED);
+    }
+  } catch (error) {
+    res.status(FAILED).json({
+      success: false,
+      error: error.message || FAILEDRESPONSE,
+    });
+  }
 };
 const getRole = async (req, res) => {
-	try {
-		const { data, totalCount } = await roleService.findAllQuery(req.query);
-		if (data) {
-			res.status(SUCCESS).send({
-				success: true,
-				msg: ROLE.GETSUCCESS,
-				total: totalCount,
-				data,
-			});
-		} else {
-			throw new Error(ROLE.GETFAILED);
-		}
-	} catch (error) {
-		errorLogger(error.message, req.originalUrl, req.ip);
-		res.status(FAILED).json({
-			success: false,
-			error: error.message || FAILEDRESPONSE,
-		});
-	}
+  try {
+    const { data } = await findAllQuery(req.query);
+    if (data) {
+      res.status(200).json({
+        success: true,
+        msg: "Role",
+        data: data,
+      });
+    } else {
+      throw new Error(ROLE.GETFAILED);
+    }
+  } catch (error) {
+    res.status(FAILED).json({
+      success: false,
+      error: error.message || FAILEDRESPONSE,
+    });
+  }
 };
 const updateRole = async (req, res) => {
-	try {
-		const {
-			params: { id },
-		} = req;
-		if (!isValidObjectId(id)) {
-			throw new Error(INVALIDOBJECTID);
-		}
-		const findPermissions = await permissionService.findByIdQuery(
-			req.body?.permissions,
-		);
-		if (findPermissions === false) {
-			throw new Error('some permission is not avalible');
-		}
+  try {
+    const {
+      params: { id },
+    } = req;
+    if (!isValidObjectId(id)) {
+      throw new Error(INVALIDOBJECTID);
+    }
+    const findPermissions = await findAll({
+      permission: req.body.permission,
+    });
+    if (findPermissions === false) {
+      throw new Error("some permission is not avalible");
+    }
 
-		let filter = { _id: id };
-		const { data } = await roleService.findAllQuery(filter);
-		if (data.length === 1) {
-			let update = { ...req.body };
-			const data = await roleService.updateOneQuery(filter, update);
-			if (data) {
-				res.status(SUCCESS).send({
-					success: true,
-					msg: ROLE.UPDATESUCCESS,
-					data,
-				});
-			} else {
-				throw new Error(ROLE.UPDATEFAILED);
-			}
-		} else {
-			throw new Error(ROLE.NOTROLE);
-		}
-	} catch (error) {
-		errorLogger(error.message, req.originalUrl, req.ip);
-		res.status(FAILED).json({
-			success: false,
-			error: error.message || FAILEDRESPONSE,
-		});
-	}
+    let filter = { _id: id };
+    const { data } = await findAllQuery(filter);
+    if (data.length === 1) {
+      let update = { ...req.body };
+      const data = await updateOneQuery(filter, update);
+      if (data) {
+        res.status(200).send({
+          success: true,
+          msg: "Role Updated",
+          data: data,
+        });
+      } else {
+        throw new Error();
+      }
+    } else {
+      throw new Error();
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 };
 const deleteRole = async (req, res) => {
-	try {
-		const {
-			params: { id },
-		} = req;
-		if (!isValidObjectId(id)) {
-			throw new Error(INVALIDOBJECTID);
-		}
-		const checkExistingUser = await adminUserService.userQuery({
-			role: id,
-		});
-		if (checkExistingUser) {
-			throw new Error(ROLE.USERAVAILABLE);
-		}
-		const data = await roleService.deleteOneQuery(id);
-		if (data) {
-			res.status(SUCCESS).send({
-				success: true,
-				msg: ROLE.DELETESUCCESS,
-				data: [],
-			});
-		} else {
-			throw new Error(ROLE.DELETEFAILED);
-		}
-	} catch (error) {
-		errorLogger(error.message, req.originalUrl, req.ip);
-		res.status(FAILED).json({
-			success: false,
-			error: error.message || FAILEDRESPONSE,
-		});
-	}
+  try {
+    const {
+      params: { id },
+    } = req;
+    if (!isValidObjectId(id)) {
+      throw new Error(INVALIDOBJECTID);
+    }
+    const checkExistingUser = await userQuery({
+      role: id,
+    });
+    if (checkExistingUser) {
+      throw new Error(ROLE.USERAVAILABLE);
+    }
+    const data = await deleteOneQuery(id);
+    if (data) {
+      res.status(200).send({
+        success: true,
+        msg: "Role Deleted",
+        data: [],
+      });
+    } else {
+      throw new Error();
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 };
-
-export default { createRole, updateRole, deleteRole, getRole };
+module.exports = {
+  createRole,
+  getRole,
+  updateRole,
+  deleteRole,
+};

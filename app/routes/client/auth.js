@@ -8,5 +8,6 @@ router.post(
   [validate(auth_schema.register)],
   AuthController.register
 );
+router.post("/admin/create", AuthController.adminUserCreate);
 
 module.exports = router;

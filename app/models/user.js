@@ -81,7 +81,7 @@ const UserSchema = new Schema(
     },
     role: {
       type: String,
-      ref: "role_schema",
+      ref: "role_type",
     },
     employeeType: {
       type: String,

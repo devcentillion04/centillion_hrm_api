@@ -1,1 +1,3 @@
-export { default as constant } from "./constants.js";
+const { CONSTANTS } = require("./constants.js");
+
+module.exports = { CONSTANTS };
