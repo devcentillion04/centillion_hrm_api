@@ -58,6 +58,18 @@ class UserController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+  async delete(req, res) {
+    try {
+      await UserSchema.findOneAndUpdate(
+        { _id: req.params.id },
+        { isDeleted: true },
+        { upsert: true, new: true }
+      );
+      return res.status(200).json({ success: true, data: [] });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 module.exports = new UserController();

@@ -20,6 +20,9 @@ const LeavesManagement = new Schema(
     leaveTo: {
       type: Date,
     },
+    status: {
+      type: String,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
