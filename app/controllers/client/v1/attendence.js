@@ -25,10 +25,7 @@ class AttendanceController {
     let attendence =
       req.query.page || req.query.limit
         ? await Attendance.paginate(criteria, options)
-        : await Attendance.find(criteria).sort(
-            { [sort_key]: sort_direction },
-            { workDate: moment() }
-          );
+        : await Attendance.find(criteria).sort({ [sort_key]: sort_direction });
     return res.status(200).json({ success: true, data: attendence });
   }
   async create(req, res) {
@@ -110,11 +107,16 @@ class AttendanceController {
   }
   async show(req, res) {
     try {
-      const { id } = req.params;
-      let data = await Attendance.findById(id)
+      let { id } = req.params;
+      let user = {};
+      if (id) {
+        user = { ...req.params.id, userId: id };
+      } else {
+        user = { ...req.params.id };
+      }
+      let data = await Attendance.find(user)
         .populate({ path: "userId" })
-        .populate({ path: "userId", select: "email" })
-        .populate({ path: "userId", select: "firstName" });
+        .populate({ path: "userId", select: "email" });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -134,21 +136,6 @@ class AttendanceController {
       return res.status(200).json({ success: true, data: attendence });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
-    }
-  }
-  async showId(req, res) {
-    try {
-      let { id } = req.params;
-      let user = {};
-      if (id) {
-        user = { ...req.params.id, userId: id };
-      } else {
-        user = { ...req.params.id };
-      }
-      let attendence = await Attendance.find(user);
-      return res.status(200).json({ success: true, data: attendence });
-    } catch (error) {
-      return res.status(500).json({ success: true, message: error.message });
     }
   }
   async userAttendence(req, res) {
