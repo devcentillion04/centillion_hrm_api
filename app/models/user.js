@@ -69,6 +69,7 @@ const UserSchema = new Schema(
     },
     profile: {
       type: String,
+      default: null,
     },
     isActive: {
       type: Boolean,
@@ -80,8 +81,7 @@ const UserSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["USER", "ADMIN"],
-      default: "ADMIN",
+      ref: "role_type",
     },
     employeeType: {
       type: String,

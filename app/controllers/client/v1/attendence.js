@@ -3,17 +3,30 @@ const Attendance = require("../../../models/attendence");
 
 class AttendanceController {
   async index(req, res) {
-    let user = {};
-    if (req.body.userId) {
-      user = { ...req.params._id, userId: req.body.userId };
-    } else {
-      user = { ...req.params._id };
+    let sort_key = req.query.sort_key || "name";
+    let sort_direction = req.query.sort_direction
+      ? req.query.sort_direction === "asc"
+        ? 1
+        : -1
+      : 1;
+
+    let criteria = {};
+
+    if (req.query.type) {
+      Object.assign(criteria, { type: req.query.type });
     }
-    let attendence = await Attendance.find(user);
+
+    const options = {
+      page: req.query.page || 1,
+      limit: req.query.limit || 10,
+      sort: { [sort_key]: sort_direction },
+    };
+
+    let attendence =
+      req.query.page || req.query.limit
+        ? await Attendance.paginate(criteria, options)
+        : await Attendance.find(criteria).sort({ [sort_key]: sort_direction });
     return res.status(200).json({ success: true, data: attendence });
-  }
-  catch(error) {
-    return res.status(500).json({ success: false, message: error.message });
   }
   async create(req, res) {
     try {
@@ -94,11 +107,44 @@ class AttendanceController {
   }
   async show(req, res) {
     try {
-      const { id } = req.params;
-      let data = await Attendance.findById(id)
+      let { id } = req.params;
+      let user = {};
+      if (id) {
+        user = { ...req.params.id, userId: id };
+      } else {
+        user = { ...req.params.id };
+      }
+      let data = await Attendance.find(user)
         .populate({ path: "userId" })
         .populate({ path: "userId", select: "email" });
       return res.status(200).json({ success: true, data: data });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  async update(req, res) {
+    try {
+      let payload = {
+        clockIn: moment(req.body.clockIn).utc(true),
+        clockOut: moment(req.body.clockOut).utc(true),
+      };
+      const attendence = await Attendance.findOneAndUpdate(
+        req.params.id,
+        payload,
+        { upsert: true, new: true }
+      );
+      return res.status(200).json({ success: true, data: attendence });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  async userAttendence(req, res) {
+    try {
+      let payload = {
+        workDate: moment().startOf("day").utc(true).add("days"),
+      };
+      let attendence = await Attendance.find(payload);
+      return res.status(200).json({ success: true, data: attendence });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }

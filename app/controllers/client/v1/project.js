@@ -2,15 +2,33 @@ const { projectSchema } = require("../../../models/project");
 
 class projectController {
   async index(req, res) {
-    try {
-      let criteria = {
-        isDeleted: true,
-      };
-      let project = await projectSchema.find(req.params.id, criteria);
-      return res.status(200).json({ success: true, data: project });
-    } catch (error) {
-      return res.status(500).json({ success: false, message: error.message });
+    let sort_key = req.query.sort_key || "name";
+    let sort_direction = req.query.sort_direction
+      ? req.query.sort_direction === "asc"
+        ? 1
+        : -1
+      : 1;
+
+    let criteria = {};
+
+    if (req.query.type) {
+      Object.assign(criteria, { type: req.query.type });
     }
+
+    const options = {
+      page: req.query.page || 1,
+      limit: req.query.limit || 10,
+      sort: { [sort_key]: sort_direction },
+    };
+
+    let project =
+      req.query.page || req.query.limit
+        ? await projectSchema.paginate(criteria, options)
+        : await projectSchema
+            .find(criteria)
+            .sort({ [sort_key]: sort_direction });
+
+    return res.status(200).json({ success: true, data: project });
   }
   async create(req, res) {
     try {

@@ -5,13 +5,16 @@ const attendanceRoutes = require("./client/attendence");
 const userRoutes = require("./client/user");
 const projectRoutes = require("./client/project");
 const employeeRoutes = require("./client/employee");
-const salaryRoutes = require("./client/salary");
-
+const role = require("./admin/role");
+const permission = require("./admin/permission");
+const leaves = require("./client/leave");
 router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
 router.use("/attendance", attendanceRoutes);
 router.use("/project", projectRoutes);
 router.use("/employee", employeeRoutes);
-router.use("/salary", salaryRoutes);
+router.use("/role", role);
+router.use("/permission", permission);
+router.use("/leave", leaves);
 
 module.exports = router;

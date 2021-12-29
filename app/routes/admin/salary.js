@@ -1,5 +1,5 @@
 const express = require("express");
-const salary = require("../../controllers/client/v1/salary");
+const salary = require("../../controllers/admin/v1/salary");
 const router = express.Router();
 const auth = require("../../middleware/authorization");
 
