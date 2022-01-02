@@ -1,6 +1,7 @@
 const { json } = require("body-parser");
 const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
+const { UserSchema } = require("../../../models/user");
 
 class AttendanceController {
   async index(req, res) {
@@ -99,7 +100,10 @@ class AttendanceController {
       }
       let data = await Attendance.find(user)
         .populate({ path: "userId" })
-        .populate({ path: "userId", select: "email" });
+        .populate({
+          path: "userId",
+          select: ["firstname", "lastname", "profile", "email"],
+        });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -110,6 +114,9 @@ class AttendanceController {
       let payload = {
         clockIn: moment(req.body.clockIn).utc(true),
         clockOut: moment(req.body.clockOut).utc(true),
+        workingHours: moment(req.body.clockOut)
+          .utc(true)
+          .diff(moment(req.body.clockIn).utc(true), "hour"),
       };
       const attendence = await Attendance.findOneAndUpdate(
         req.params.id,

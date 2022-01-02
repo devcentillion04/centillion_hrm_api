@@ -76,10 +76,16 @@ class LeaveController {
   }
   async show(req, res) {
     try {
-      const { id } = req.params;
-      let data = await LeavesManagement.findById(id).populate({
+      let { id } = req.params;
+      let user = {};
+      if (id) {
+        user = { ...req.params._id, userId: id };
+      } else {
+        user = { ...req.params._id };
+      }
+      let data = await LeavesManagement.find(user).populate({
         path: "userId",
-        select: "email",
+        select: ["email", "firstname", "lastname", "profile"],
       });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
