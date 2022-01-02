@@ -1,32 +1,16 @@
+const { json } = require("body-parser");
 const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
+const { UserSchema } = require("../../../models/user");
 
 class AttendanceController {
   async index(req, res) {
-    let sort_key = req.query.sort_key || "name";
-    let sort_direction = req.query.sort_direction
-      ? req.query.sort_direction === "asc"
-        ? 1
-        : -1
-      : 1;
-
-    let criteria = {};
-
-    if (req.query.type) {
-      Object.assign(criteria, { type: req.query.type });
+    try {
+      let attendence = await Attendance.findById(req.params.id);
+      return res.status(200).json({ success: true, data: attendence });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
     }
-
-    const options = {
-      page: req.query.page || 1,
-      limit: req.query.limit || 10,
-      sort: { [sort_key]: sort_direction },
-    };
-
-    let attendence =
-      req.query.page || req.query.limit
-        ? await Attendance.paginate(criteria, options)
-        : await Attendance.find(criteria).sort({ [sort_key]: sort_direction });
-    return res.status(200).json({ success: true, data: attendence });
   }
   async create(req, res) {
     try {
@@ -110,13 +94,16 @@ class AttendanceController {
       let { id } = req.params;
       let user = {};
       if (id) {
-        user = { ...req.params.id, userId: id };
+        user = { ...req.params._id, userId: id };
       } else {
-        user = { ...req.params.id };
+        user = { ...req.params._id };
       }
       let data = await Attendance.find(user)
         .populate({ path: "userId" })
-        .populate({ path: "userId", select: "email" });
+        .populate({
+          path: "userId",
+          select: ["firstname", "lastname", "profile", "email"],
+        });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -127,6 +114,9 @@ class AttendanceController {
       let payload = {
         clockIn: moment(req.body.clockIn).utc(true),
         clockOut: moment(req.body.clockOut).utc(true),
+        workingHours: moment(req.body.clockOut)
+          .utc(true)
+          .diff(moment(req.body.clockIn).utc(true), "hour"),
       };
       const attendence = await Attendance.findOneAndUpdate(
         req.params.id,
