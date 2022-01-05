@@ -92,6 +92,13 @@ const UserSchema = new Schema(
       type: Number,
       default: 0,
     },
+    totalPaidLeave: {
+      type: Number,
+      default: 18,
+    },
+    holidayList: {
+      type: Schema.Types.Mixed,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );

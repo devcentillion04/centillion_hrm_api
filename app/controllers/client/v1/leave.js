@@ -1,5 +1,5 @@
 const { LeavesManagement } = require("../../../models/leave");
-const { UserSchema } = require("../../../models/user");
+const { userSchema } = require("../../../models/user");
 
 class LeaveController {
   async index(req, res) {
@@ -31,7 +31,7 @@ class LeaveController {
 
     return res.status(200).json({ success: true, data: leave });
   }
-  async create(req, res) {
+  async applyLeave(req, res) {
     try {
       let payload = {
         ...req.body,
@@ -39,10 +39,9 @@ class LeaveController {
         leaveTo: req.body.leaveTo,
       };
       let { id } = req.params;
-      const findUser = await UserSchema.findOne({
+      const findUser = await userSchema.findOne({
         _id: id,
       });
-      console.log(findUser._id);
       const leaveData = await new LeavesManagement({
         ...payload,
         userId: findUser._id,
@@ -89,6 +88,116 @@ class LeaveController {
       });
       return res.status(200).json({ success: true, data: data });
     } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * For Cancel Leave
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async cancelLeave(req, res) {
+    try {
+      await LeavesManagement.updateOne(
+        {
+          _id: req.params.id,
+        },
+        {
+          isDeleted: true,
+        }
+      );
+      return res.status(200).json({
+        success: true,
+        data: {},
+        message: "Successfully Leave Cancel",
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+  /**
+   * For Approve leave api
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async approveLeave(req, res) {
+    try {
+      // let leaveData = await LeavesManagement.findOne(
+      //   {
+      //     _id: req.params.id,
+      //   },
+      //   {
+      //     totalDay: 1,
+      //     userId: 1,
+      //   }
+      // );
+      await LeavesManagement.updateOne(
+        {
+          _id: req.params.id,
+        },
+        {
+          approvedBy: req.body.approvedBy,
+          isApproved: true,
+          status: "approved",
+        }
+      );
+      // if (leaveData.userId) {
+      //   let userData = await userSchema.findOne(
+      //     {
+      //       _id: leaveData.userId,
+      //     },
+      //     {
+      //       totalPaidLeave: 1,
+      //     }
+      //   );
+      //   let totalPaidLeaveCount = userData.totalPaidLeave - leaveData.totalDay;
+      //   await userSchema.updateOne(
+      //     {
+      //       _id: leaveData.userId,
+      //     },
+      //     {
+      //       totalPaidLeave: totalPaidLeaveCount,
+      //     }
+      //   );
+      // }
+
+      return res.status(200).json({
+        success: true,
+        data: {},
+        message: "Successfully Leave Approved",
+      });
+    } catch {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * For Approve leave api
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async rejectLeave(req, res) {
+    try {
+      await LeavesManagement.updateOne(
+        {
+          _id: req.params.id,
+        },
+        {
+          rejectedBy: req.body.rejectedBy,
+          isApproved: false,
+          status: "rejected",
+        }
+      );
+      return res.status(200).json({
+        success: true,
+        data: {},
+        message: "Successfully Leave Rejected",
+      });
+    } catch {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
