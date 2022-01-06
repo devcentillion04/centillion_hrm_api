@@ -1,13 +1,38 @@
-const { json } = require("body-parser");
 const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
-const { UserSchema } = require("../../../models/user");
 
 class AttendanceController {
   async index(req, res) {
     try {
-      let attendence = await Attendance.findById(req.params.id);
-      return res.status(200).json({ success: true, data: attendence });
+      let { page, limit, sortField, sortValue } = req.query;
+      let sort = {};
+      let whereClause = {};
+      if (sortField) {
+        sort = {
+          [sortField]: sortValue === "ASC" ? 1 : -1,
+        };
+      } else {
+        sort = {
+          name: 1,
+        };
+      }
+      if (req.query.type) {
+        Object.assign(whereClause, { type: req.query.type });
+      }
+
+      let attendence = await Attendance.find(whereClause)
+        .skip(page > 0 ? +limit * (+page - 1) : 0)
+        .limit(+limit || 20)
+        .sort(sort)
+        .populate({
+          path: "userId",
+          select: ["firstname", "lastname", "email", "profile"],
+        });
+
+      return res.status(200).json({
+        success: true,
+        data: attendence,
+      });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
@@ -19,8 +44,6 @@ class AttendanceController {
         userId: req.currentUser._id,
       };
 
-      // let getId = await Attendance.findOne(userId);
-      // console.log(getId);
       let attendance = await Attendance.findOne(criteria);
       if (attendance) {
         let date = moment().utc(true);
@@ -98,25 +121,43 @@ class AttendanceController {
       } else {
         user = { ...req.params._id };
       }
-      let data = await Attendance.find(user)
-        .populate({ path: "userId" })
+      let { page, limit, sortField, sortValue } = req.query;
+      let sort = {};
+      let whereClause = {};
+      if (sortField) {
+        sort = {
+          [sortField]: sortValue === "ASC" ? 1 : -1,
+        };
+      } else {
+        sort = {
+          name: 1,
+        };
+      }
+
+      let attendence = await Attendance.find(user, whereClause)
+        .skip(page > 0 ? +limit * (+page - 1) : 0)
+        .limit(+limit || 20)
+        .sort(sort)
         .populate({
           path: "userId",
-          select: ["firstname", "lastname", "profile", "email"],
+          select: ["firstname", "lastname", "email", "profile"],
         });
-      return res.status(200).json({ success: true, data: data });
+      return res.status(200).json({
+        success: true,
+        data: attendence.docs ? attendence.docs : attendence,
+      });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
   async update(req, res) {
     try {
+      const data = await Attendance.findById({ userId: req.body.userId });
+      console.log(data);
       let payload = {
         clockIn: moment(req.body.clockIn).utc(true),
         clockOut: moment(req.body.clockOut).utc(true),
-        workingHours: moment(req.body.clockOut)
-          .utc(true)
-          .diff(moment(req.body.clockIn).utc(true), "hour"),
+        workingHours: req.body.workingHours,
       };
       const attendence = await Attendance.findOneAndUpdate(
         req.params.id,
@@ -131,10 +172,33 @@ class AttendanceController {
   async userAttendence(req, res) {
     try {
       let payload = {
-        workDate: moment().startOf("day").utc(true).add("days"),
+        workDate: moment().startOf("day").utc(true),
       };
-      let attendence = await Attendance.find(payload);
-      return res.status(200).json({ success: true, data: attendence });
+      let { page, limit, sortField, sortValue } = req.query;
+      let sort = {};
+      let whereClause = {};
+      if (sortField) {
+        sort = {
+          [sortField]: sortValue === "ASC" ? 1 : -1,
+        };
+      } else {
+        sort = {
+          name: 1,
+        };
+      }
+
+      let attendence = await Attendance.find(payload)
+        .skip(page > 0 ? +limit * (+page - 1) : 0)
+        .limit(+limit || 20)
+        .sort(sort)
+        .populate({
+          path: "userId",
+          select: ["firstname", "lastname", "email", "profile"],
+        });
+      return res.status(200).json({
+        success: true,
+        data: attendence,
+      });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
