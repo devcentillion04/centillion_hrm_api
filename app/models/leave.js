@@ -46,6 +46,9 @@ const LeavesManagement = new Schema(
     totalDay: {
       type: Number,
     },
+    isPaid: {
+      type: Boolean,
+    },
   },
   {
     timestamps: true,
