@@ -496,6 +496,75 @@ class LeaveController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  /**
+   * For Get Current leave Data
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async publicHolidayList(req, res) {
+    try {
+      let publicHolidayList = {
+        holidayList: [
+          {
+            holidayName: "Makar Sankranti",
+            holidayDate: "14/01/2022",
+          },
+          {
+            holidayName: "Republic Day",
+            holidayDate: "26/01/2022",
+          },
+          {
+            holidayName: "Holi",
+            holidayDate: "18/03/2022",
+          },
+          {
+            holidayName: "Ramzan Eid",
+            holidayDate: "03/05/2022",
+          },
+          {
+            holidayName: "Rakshbandhan",
+            holidayDate: "11/08/2022",
+          },
+          {
+            holidayName: "Independence Day",
+            holidayDate: "15/08/2022",
+          },
+          {
+            holidayName: "Janmashtami",
+            holidayDate: "18/08/2022",
+          },
+          {
+            holidayName: "Diwali",
+            holidayDate: "24/10/2022",
+          },
+          {
+            holidayName: "New Year",
+            holidayDate: "25/10/2022",
+          },
+          {
+            holidayName: "Bhai Dooj",
+            holidayDate: "26/10/2022",
+          },
+          {
+            holidayName: "Christmas",
+            holidayDate: "25/12/2022",
+          },
+        ],
+        year: "2022",
+        isDeleted: false,
+      };
+      return res.status(200).json({
+        success: true,
+        data: publicHolidayList,
+        message: "",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 const workingDaysCount = (start, end) => {

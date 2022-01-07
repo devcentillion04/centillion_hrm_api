@@ -11,9 +11,10 @@ router.post(
 );
 router.get("/:id", LeaveController.show);
 router.get("/", LeaveController.index);
-router.put("/update/:id", LeaveController.update); //update leave data
-router.put("/cancelLeave/:id", LeaveController.cancelLeave); //cancel leave
-router.put("/approveLeave/:id", LeaveController.approveLeave); //approve leave
-router.put("/rejectLeave/:id", LeaveController.rejectLeave); //reject leave
+router.post("/update/:id", LeaveController.update); //update leave data
+router.post("/cancelLeave/:id", LeaveController.cancelLeave); //cancel leave
+router.post("/approveLeave/:id", LeaveController.approveLeave); //approve leave
+router.post("/rejectLeave/:id", LeaveController.rejectLeave); //reject leave
 router.get("/getLeaveData/:id", LeaveController.getLeaveData); //get leave data
+router.post("/publicHolidayList", LeaveController.publicHolidayList); //get all public holiday list
 module.exports = router;
