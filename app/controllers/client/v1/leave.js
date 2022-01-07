@@ -17,11 +17,15 @@ class LeaveController {
     if (req.query.type) {
       Object.assign(criteria, { type: req.query.type });
     }
-
+    var populateData = {
+      path: "userId",
+      select: ["email", "firstname", "lastname", "profile"],
+    };
     const options = {
       page: req.query.page || 1,
       limit: req.query.limit || 10,
       sort: { [sort_key]: sort_direction },
+      populate: populateData,
     };
 
     let leave =
@@ -31,7 +35,9 @@ class LeaveController {
             [sort_key]: sort_direction,
           });
 
-    return res.status(200).json({ success: true, data: leave });
+    return res
+      .status(200)
+      .json({ success: true, data: leave.docs ? leave.docs : leave });
   }
 
   /**
@@ -46,6 +52,7 @@ class LeaveController {
         ...req.body,
         leaveFrom: req.body.leaveFrom,
         leaveTo: req.body.leaveTo,
+        status: "pending",
       };
       //find user data
       let userData = await UserSchema.findOne(
@@ -385,6 +392,7 @@ class LeaveController {
         },
         {
           isDeleted: true,
+          status: "cancel",
         }
       );
       return res.status(200).json({
@@ -396,6 +404,7 @@ class LeaveController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
   /**
    * For Approve leave api
    * @param {*} req
@@ -418,6 +427,7 @@ class LeaveController {
           approvedBy: req.body.approvedBy,
           isApproved: true,
           status: "approved",
+          approveDate: moment(),
         }
       );
       if (leaveData.isPaid == true) {
@@ -464,6 +474,7 @@ class LeaveController {
           rejectedBy: req.body.rejectedBy,
           isApproved: false,
           status: "rejected",
+          rejectDate: moment(),
         }
       );
       return res.status(200).json({

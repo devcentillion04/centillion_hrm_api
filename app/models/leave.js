@@ -49,6 +49,12 @@ const LeavesManagement = new Schema(
     isPaid: {
       type: Boolean,
     },
+    approveDate: {
+      type: Date,
+    },
+    rejectDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
