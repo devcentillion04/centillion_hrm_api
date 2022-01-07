@@ -36,7 +36,6 @@ class LeaveController {
 
   /**
    * For Apply leave
-   *
    * @param {*} req
    * @param {*} res
    * @returns
@@ -48,6 +47,16 @@ class LeaveController {
         leaveFrom: req.body.leaveFrom,
         leaveTo: req.body.leaveTo,
       };
+      //find user data
+      let userData = await UserSchema.findOne(
+        {
+          _id: req.params.id,
+        },
+        {
+          totalPaidLeave: 1,
+          totalUnpaidLeave: 1,
+        }
+      );
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
       let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -69,7 +78,6 @@ class LeaveController {
         //   year: "2022",
         // });
         let publicHolidayList = {
-          // "_id" : ObjectId("61d6ce85fcf46886bb63783a"),
           holidayList: [
             {
               holidayName: "Makar Sankranti",
@@ -132,22 +140,32 @@ class LeaveController {
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
         data.totalDay = leaveDaysCount * leaveCount;
-        let { id } = req.params;
+        //update isPaid flag accroding to leave type
+        if (
+          (userData.totalPaidLeave >= data.totalDay &&
+            data.type == "PaidLeave") ||
+          data.type == "UnpaidLeave"
+        ) {
+          let { id } = req.params;
+          if (data.type == "PaidLeave") {
+            data.isPaid = true;
+          }
+          if (data.type == "UnpaidLeave") {
+            data.isPaid = false;
+          }
 
-        if (data.type == "PaidLeave") {
-          data.isPaid = true;
+          let leaveData = await new LeavesManagement({
+            ...data,
+            userId: id,
+          });
+
+          await leaveData.save(); //create leave document
+          return res.status(200).json({ success: true, data: leaveData });
+        } else {
+          return res
+            .status(500)
+            .json({ success: false, data: "Not Available for Paid Leave" });
         }
-        if (data.type == "UnpaidLeave") {
-          data.isPaid = false;
-        }
-
-        let leaveData = await new LeavesManagement({
-          ...data,
-          userId: id,
-        });
-
-        await leaveData.save();
-        return res.status(200).json({ success: true, data: leaveData });
       } else {
         return res
           .status(500)
@@ -187,9 +205,10 @@ class LeaveController {
           leaveCount = 1;
         }
         let leaveDaysCount = workingDaysCount(start, end);
+        let currentYear = moment().format("YYYY");
         // let publicHolidayList = await holidaySchema.findOne({
         //   isDeleted: false,
-        //   year: "2022",
+        //   year: currentYear,
         // });
         let publicHolidayList = {
           holidayList: [
@@ -314,6 +333,52 @@ class LeaveController {
    */
   async cancelLeave(req, res) {
     try {
+      if (req.body.isApproved) {
+        //get current leave data
+        let leaveData = await LeavesManagement.findOne(
+          {
+            _id: req.params.id,
+            isDeleted: false,
+          },
+          {
+            totalDay: 1,
+            isPaid: 1,
+            isApproved: 1,
+            userId: 1,
+          }
+        );
+        if (leaveData.isApproved) {
+          //get user data
+          let userData = await UserSchema.findOne(
+            {
+              _id: leaveData.userId,
+            },
+            {
+              totalUnpaidLeave: 1,
+              totalPaidLeave: 1,
+            }
+          );
+
+          //chek leave type & update count
+          if (leaveData.isPaid == true) {
+            userData.totalPaidLeave =
+              userData.totalPaidLeave + leaveData.totalDay;
+          } else {
+            userData.totalUnpaidLeave =
+              userData.totalUnpaidLeave + leaveData.totalDay;
+          }
+          //update user data
+          await UserSchema.updateOne(
+            {
+              _id: leaveData.userId,
+            },
+            {
+              totalUnpaidLeave: userData.totalUnpaidLeave,
+              totalPaidLeave: userData.totalPaidLeave,
+            }
+          );
+        }
+      }
       await LeavesManagement.findOneAndUpdate(
         {
           _id: req.params.id,
@@ -345,7 +410,6 @@ class LeaveController {
         path: "userId",
         select: ["totalPaidLeave", "totalUnpaidLeave", "_id"],
       });
-      console.log(leaveData);
       await LeavesManagement.updateOne(
         {
           _id: req.params.id,
@@ -385,7 +449,7 @@ class LeaveController {
   }
 
   /**
-   * For Approve leave api
+   * For Reject leave api
    * @param {*} req
    * @param {*} res
    * @returns
@@ -426,7 +490,7 @@ class LeaveController {
       return res.status(200).json({
         success: true,
         data: leaveData,
-        message: " ",
+        message: "",
       });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

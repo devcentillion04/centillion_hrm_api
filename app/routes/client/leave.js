@@ -11,9 +11,9 @@ router.post(
 );
 router.get("/:id", LeaveController.show);
 router.get("/", LeaveController.index);
-router.put("/update/:id", LeaveController.update);
-router.get("/cancelLeave/:id", LeaveController.cancelLeave);
-router.put("/approveLeave/:id", LeaveController.approveLeave);
-router.put("/rejectLeave/:id", LeaveController.rejectLeave);
-router.get("/getLeaveData/:id", LeaveController.getLeaveData);
+router.put("/update/:id", LeaveController.update); //update leave data
+router.put("/cancelLeave/:id", LeaveController.cancelLeave); //cancel leave
+router.put("/approveLeave/:id", LeaveController.approveLeave); //approve leave
+router.put("/rejectLeave/:id", LeaveController.rejectLeave); //reject leave
+router.get("/getLeaveData/:id", LeaveController.getLeaveData); //get leave data
 module.exports = router;
