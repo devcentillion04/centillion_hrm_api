@@ -1,6 +1,7 @@
 const { UserSchema } = require("../../../models/user");
 const { genSaltSync, hashSync, compareSync } = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const moment = require("moment");
 let secretOrKey = process.env.JWT_SECRET;
 const { CONSTANTS } = require("../../../constants/index.js");
 // const { userService } = require("../../../services/index.js");
@@ -75,8 +76,13 @@ class AuthController {
       if (emailFind) {
         throw new Error("email is already taken");
       } else {
+        let joiningMonth = moment().format("MM");
+        let totalMonth = 12 - (parseInt(joiningMonth) - 1);
+        let totalPaidLeave = totalMonth * 1.5;
         let payload = {
           ...req.body,
+          totalPaidLeave: totalPaidLeave,
+          totalAvailablePaidLeave: totalPaidLeave,
           password: hashSync(req.body.password, genSaltSync(10)),
         };
 

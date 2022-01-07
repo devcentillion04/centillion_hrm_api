@@ -94,11 +94,17 @@ const UserSchema = new Schema(
     },
     totalPaidLeave: {
       type: Number,
-      default: 18,
     },
     totalUnpaidLeave: {
       type: Number,
       default: 0,
+    },
+    totalAvailablePaidLeave: {
+      type: Number,
+    },
+    joiningDate: {
+      type: Date,
+      required: true,
     },
   },
   { timestamps: true, toJSON: { virtuals: true } }

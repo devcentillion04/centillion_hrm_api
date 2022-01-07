@@ -2,6 +2,7 @@ const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
 const moment = require("moment");
+const timezone = "+5:30";       
 
 class LeaveController {
   async index(req, res) {
@@ -60,7 +61,7 @@ class LeaveController {
           _id: req.params.id,
         },
         {
-          totalPaidLeave: 1,
+          totalAvailablePaidLeave: 1,
           totalUnpaidLeave: 1,
         }
       );
@@ -146,10 +147,10 @@ class LeaveController {
           }
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
-        data.totalDay = leaveDaysCount * leaveCount;
+        data.totalDay = leaveDaysCount * leaveCount;        
         //update isPaid flag accroding to leave type
         if (
-          (userData.totalPaidLeave >= data.totalDay &&
+          (userData.totalAvailablePaidLeave >= data.totalDay &&
             data.type == "PaidLeave") ||
           data.type == "UnpaidLeave"
         ) {
@@ -178,7 +179,7 @@ class LeaveController {
           .status(500)
           .json({ success: false, data: "Please Select Valid Date" });
       }
-    } catch (error) {
+    } catch (error) {      
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -362,14 +363,14 @@ class LeaveController {
             },
             {
               totalUnpaidLeave: 1,
-              totalPaidLeave: 1,
+              totalAvailablePaidLeave: 1,
             }
           );
 
           //chek leave type & update count
           if (leaveData.isPaid == true) {
-            userData.totalPaidLeave =
-              userData.totalPaidLeave + leaveData.totalDay;
+            userData.totalAvailablePaidLeave =
+              userData.totalAvailablePaidLeave + leaveData.totalDay;
           } else {
             userData.totalUnpaidLeave =
               userData.totalUnpaidLeave + leaveData.totalDay;
@@ -381,7 +382,7 @@ class LeaveController {
             },
             {
               totalUnpaidLeave: userData.totalUnpaidLeave,
-              totalPaidLeave: userData.totalPaidLeave,
+              totalAvailablePaidLeave: userData.totalAvailablePaidLeave,
             }
           );
         }
@@ -417,7 +418,7 @@ class LeaveController {
         _id: req.params.id,
       }).populate({
         path: "userId",
-        select: ["totalPaidLeave", "totalUnpaidLeave", "_id"],
+        select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
       });
       await LeavesManagement.updateOne(
         {
@@ -431,8 +432,8 @@ class LeaveController {
         }
       );
       if (leaveData.isPaid == true) {
-        leaveData.userId.totalPaidLeave =
-          leaveData.userId.totalPaidLeave - leaveData.totalDay;
+        leaveData.userId.totalAvailablePaidLeave =
+          leaveData.userId.totalAvailablePaidLeave - leaveData.totalDay;
       }
       if (leaveData.isPaid == false) {
         leaveData.userId.totalUnpaidLeave =
@@ -443,7 +444,7 @@ class LeaveController {
           _id: leaveData.userId._id,
         },
         {
-          totalPaidLeave: leaveData.userId.totalPaidLeave,
+          totalAvailablePaidLeave: leaveData.userId.totalAvailablePaidLeave,
           totalUnpaidLeave: leaveData.userId.totalUnpaidLeave,
         }
       );
@@ -498,6 +499,7 @@ class LeaveController {
       let leaveData = await LeavesManagement.findOne({
         _id: req.params.id,
       });
+
       return res.status(200).json({
         success: true,
         data: leaveData,
@@ -565,7 +567,7 @@ class LeaveController {
         ],
         year: "2022",
         isDeleted: false,
-      };
+      };    
       return res.status(200).json({
         success: true,
         data: publicHolidayList,
@@ -573,6 +575,39 @@ class LeaveController {
       });
     } catch (error) {
       console.log(error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getUpcomingLeaves(req, res) {
+    try {
+      console.log("kjvkdsvjk");
+      console.log(req.params);
+      console.log(req.body);
+      let condition = {
+        isDeleted: {
+          $ne: true,
+        },
+        status: "pending",
+        userId: req.params.userId,
+      };
+      condition["leaveFrom"] = {
+        $gte: getUtcTime(req.body.leaveFrom, timezone, "YYYY/MM/DD HH:mm:ss"),
+      };
+      console.log(condition);
+      let query = [
+        {
+          $match: condition,
+        },
+      ];
+      let data = await LeavesManagement.aggregate(query).allowDiskUse(true);
+
+      return res.status(200).json({
+        success: true,
+        data: data,
+        message: "",
+      });
+    } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -587,6 +622,46 @@ const workingDaysCount = (start, end) => {
   var wlast = end.day() - last.day(); // check last week
   if (end.day() == 6) --wlast; // -1 if end with saturday
   return wfirst + Math.floor(days) + wlast; // get the total
+};
+
+/**
+ * Function is used for get utc time
+ * @param {*} input_time
+ * @param {*} utc_offset
+ * @param {*} input_format
+ * @param {*} output_format
+ */
+const getUtcTime = (
+  input_time,
+  utc_offset,
+  input_format,
+  output_format = true
+) => {
+  let dateObject = moment(input_time, input_format);
+  if (output_format == true) {
+    return dateObject
+      .add(convertUtcOffsetToMinute(utc_offset), "minute")
+      .toDate();
+  } else {
+    return dateObject
+      .add(convertUtcOffsetToMinute(utc_offset), "minute")
+      .format(output_format);
+  }
+};
+
+/**
+ * This function is used for convert timezone into minutes
+ * @param {*} tz
+ */
+const convertUtcOffsetToMinute = (tz) => {
+  let offset = tz.split(":");
+  offset[0] = parseInt(offset[0]);
+  offset[1] = parseInt(offset[1]);
+  let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
+  if (offset[0] < 0) {
+    tz_minute = tz_minute * -1;
+  }
+  return tz_minute * -1;
 };
 
 module.exports = new LeaveController();
