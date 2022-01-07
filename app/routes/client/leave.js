@@ -14,4 +14,6 @@ router.get("/", LeaveController.index);
 router.put("/update/:id", LeaveController.update);
 router.get("/cancelLeave/:id", LeaveController.cancelLeave);
 router.put("/approveLeave/:id", LeaveController.approveLeave);
+router.put("/rejectLeave/:id", LeaveController.rejectLeave);
+router.get("/getLeaveData/:id", LeaveController.getLeaveData);
 module.exports = router;

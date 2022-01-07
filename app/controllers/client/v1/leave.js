@@ -36,6 +36,7 @@ class LeaveController {
 
   /**
    * For Apply leave
+   *
    * @param {*} req
    * @param {*} res
    * @returns
@@ -338,14 +339,13 @@ class LeaveController {
    */
   async approveLeave(req, res) {
     try {
-      let leaveData = await LeavesManagement.findOne(
-        {
-          _id: req.params.id,
-        }.populate({
-          path: "userId",
-          select: ["totalPaidLeave", "totalUnpaidLeave", "_id"],
-        })
-      );
+      let leaveData = await LeavesManagement.findOne({
+        _id: req.params.id,
+      }).populate({
+        path: "userId",
+        select: ["totalPaidLeave", "totalUnpaidLeave", "_id"],
+      });
+      console.log(leaveData);
       await LeavesManagement.updateOne(
         {
           _id: req.params.id,
@@ -356,15 +356,6 @@ class LeaveController {
           status: "approved",
         }
       );
-      // let userData = await UserSchema.findOne(
-      //   {
-      //     _id: leaveData.userId,
-      //   },
-      //   {
-      //     totalPaidLeave: 1,
-      //     totalUnpaidLeave: 1,
-      //   }
-      // );
       if (leaveData.isPaid == true) {
         leaveData.userId.totalPaidLeave =
           leaveData.userId.totalPaidLeave - leaveData.totalDay;
@@ -375,11 +366,11 @@ class LeaveController {
       }
       await UserSchema.updateOne(
         {
-          _id: userData._id,
+          _id: leaveData.userId._id,
         },
         {
-          totalPaidLeave: userData.totalPaidLeave,
-          totalUnpaidLeave: userData.totalUnpaidLeave,
+          totalPaidLeave: leaveData.userId.totalPaidLeave,
+          totalUnpaidLeave: leaveData.userId.totalUnpaidLeave,
         }
       );
 
@@ -388,7 +379,7 @@ class LeaveController {
         data: {},
         message: "Successfully Leave Approved",
       });
-    } catch {
+    } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -416,7 +407,28 @@ class LeaveController {
         data: {},
         message: "Successfully Leave Rejected",
       });
-    } catch {
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * For Get Current leave Data
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async getLeaveData(req, res) {
+    try {
+      let leaveData = await LeavesManagement.findOne({
+        _id: req.params.id,
+      });
+      return res.status(200).json({
+        success: true,
+        data: leaveData,
+        message: " ",
+      });
+    } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
