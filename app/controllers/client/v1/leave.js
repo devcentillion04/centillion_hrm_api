@@ -3,33 +3,31 @@ const { UserSchema } = require("../../../models/user");
 
 class LeaveController {
   async index(req, res) {
-    let sort_key = req.query.sort_key || "name";
-    let sort_direction = req.query.sort_direction
-      ? req.query.sort_direction === "asc"
-        ? 1
-        : -1
-      : 1;
-
-    let criteria = {};
-
-    if (req.query.type) {
-      Object.assign(criteria, { type: req.query.type });
+    let { page, limit, sortField, sortValue } = req.query;
+    let sort = {};
+    let whereClause = {};
+    if (sortField) {
+      sort = {
+        [sortField]: sortValue === "ASC" ? 1 : -1,
+      };
+    } else {
+      sort = {
+        name: 1,
+      };
     }
 
-    const options = {
-      page: req.query.page || 1,
-      limit: req.query.limit || 10,
-      sort: { [sort_key]: sort_direction },
-    };
+    let leave = await LeavesManagement.find(whereClause)
+      .skip(page > 0 ? +limit * (+page - 1) : 0)
+      .limit(+limit || 20)
+      .sort(sort)
+      .populate({
+        path: "userId",
+        select: ["firstname", "lastname", "email", "profile"],
+      });
 
-    let leave =
-      req.query.page || req.query.limit
-        ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find(criteria).sort({
-            [sort_key]: sort_direction,
-          });
-
-    return res.status(200).json({ success: true, data: leave });
+    return res
+      .status(200)
+      .json({ success: true, data: leave.docs ? leave.docs : leave });
   }
   async create(req, res) {
     try {
@@ -42,7 +40,6 @@ class LeaveController {
       const findUser = await UserSchema.findOne({
         _id: id,
       });
-      console.log(findUser._id);
       const leaveData = await new LeavesManagement({
         ...payload,
         userId: findUser._id,
@@ -56,7 +53,6 @@ class LeaveController {
   }
   async update(req, res) {
     try {
-      let leave = await LeavesManagement.findById(req.params.id);
       let payload = {
         ...req.body,
         userId: req.body.userId,
@@ -83,11 +79,30 @@ class LeaveController {
       } else {
         user = { ...req.params._id };
       }
-      let data = await LeavesManagement.find(user).populate({
-        path: "userId",
-        select: ["email", "firstname", "lastname", "profile"],
-      });
-      return res.status(200).json({ success: true, data: data });
+      let { page, limit, sortField, sortValue } = req.query;
+      let sort = {};
+      let whereClause = {};
+      if (sortField) {
+        sort = {
+          [sortField]: sortValue === "ASC" ? 1 : -1,
+        };
+      } else {
+        sort = {
+          name: 1,
+        };
+      }
+
+      let leave = await LeavesManagement.find(user, whereClause)
+        .skip(page > 0 ? +limit * (+page - 1) : 0)
+        .limit(+limit || 20)
+        .sort(sort)
+        .populate({
+          path: "userId",
+          select: ["firstname", "lastname", "email", "profile"],
+        });
+      return res
+        .status(200)
+        .json({ success: true, data: leave.docs ? leave.docs : leave });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
