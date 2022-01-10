@@ -2,7 +2,7 @@ const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
 const moment = require("moment");
-const timezone = "+5:30";       
+const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
@@ -32,9 +32,11 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find(criteria).sort({
-            [sort_key]: sort_direction,
-          }).populate({path: "userId"});
+        : await LeavesManagement.find(criteria)
+            .sort({
+              [sort_key]: sort_direction,
+            })
+            .populate({ path: "userId" });
 
     return res
       .status(200)
@@ -147,7 +149,7 @@ class LeaveController {
           }
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
-        data.totalDay = leaveDaysCount * leaveCount;        
+        data.totalDay = leaveDaysCount * leaveCount;
         //update isPaid flag accroding to leave type
         if (
           (userData.totalAvailablePaidLeave >= data.totalDay &&
@@ -179,7 +181,7 @@ class LeaveController {
           .status(500)
           .json({ success: false, data: "Please Select Valid Date" });
       }
-    } catch (error) {      
+    } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -192,11 +194,7 @@ class LeaveController {
    */
   async update(req, res) {
     try {
-<<<<<<< HEAD
-      let payload = {
-=======
       let data = {
->>>>>>> 3e118584ee973f56daf74e6bfb5c3caff5de170f
         ...req.body,
         leaveFrom: req.body.leaveFrom,
         leaveTo: req.body.leaveTo,
@@ -590,7 +588,7 @@ class LeaveController {
         ],
         year: "2022",
         isDeleted: false,
-      };    
+      };
       return res.status(200).json({
         success: true,
         data: publicHolidayList,
