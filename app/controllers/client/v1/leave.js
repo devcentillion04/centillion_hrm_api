@@ -2,7 +2,7 @@ const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
 const moment = require("moment");
-const timezone = "+5:30";       
+const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
@@ -63,8 +63,27 @@ class LeaveController {
         {
           totalAvailablePaidLeave: 1,
           totalUnpaidLeave: 1,
+          totalPaidLeave: 1,
         }
       );
+      let totalPendingLeaves = 0;
+      if (data.type == "PaidLeave") {
+        let leaveDocs = await LeavesManagement.find(
+          {
+            status: "pending",
+            isDeleted: false,
+            userId: req.params.id,
+            isPaid: true,
+          },
+          {
+            _id: 1,
+            totalDay: 1,
+          }
+        );
+        leaveDocs.forEach((element) => {
+          totalPendingLeaves = totalPendingLeaves + element.totalDay;
+        });
+      }
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
       let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -147,10 +166,15 @@ class LeaveController {
           }
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
-        data.totalDay = leaveDaysCount * leaveCount;        
+        data.totalDay = leaveDaysCount * leaveCount;
         //update isPaid flag accroding to leave type
+        let totalTakenLeave =
+          totalPendingLeaves +
+          (userData.totalPaidLeave - userData.totalAvailablePaidLeave);
+
         if (
-          (userData.totalAvailablePaidLeave >= data.totalDay &&
+          (totalTakenLeave < userData.totalPaidLeave &&
+            userData.totalAvailablePaidLeave >= data.totalDay &&
             data.type == "PaidLeave") ||
           data.type == "UnpaidLeave"
         ) {
@@ -179,7 +203,7 @@ class LeaveController {
           .status(500)
           .json({ success: false, data: "Please Select Valid Date" });
       }
-    } catch (error) {      
+    } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -567,23 +591,25 @@ class LeaveController {
         ],
         year: "2022",
         isDeleted: false,
-      };    
+      };
       return res.status(200).json({
         success: true,
         data: publicHolidayList,
         message: "",
       });
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 
+  /**
+   * get upcoming leave list
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
   async getUpcomingLeaves(req, res) {
     try {
-      console.log("kjvkdsvjk");
-      console.log(req.params);
-      console.log(req.body);
       let condition = {
         isDeleted: {
           $ne: true,
@@ -594,7 +620,7 @@ class LeaveController {
       condition["leaveFrom"] = {
         $gte: getUtcTime(req.body.leaveFrom, timezone, "YYYY/MM/DD HH:mm:ss"),
       };
-      console.log(condition);
+
       let query = [
         {
           $match: condition,
@@ -605,6 +631,36 @@ class LeaveController {
       return res.status(200).json({
         success: true,
         data: data,
+        message: "",
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * get total pending leaves
+   * @param {*} req
+   * @param {*} res
+   * @returns
+   */
+  async getTotalPendigLeaves(req, res) {
+    try {
+      let leaveData = await LeavesManagement.find(
+        {
+          status: "pending",
+          isDeleted: false,
+          userId: req.params.userId,
+        },
+        {
+          _id: 1,
+        }
+      );
+      let totalPendingLeaves =
+        leaveData && leaveData.length > 0 ? leaveData.length : 0;
+      return res.status(200).json({
+        success: true,
+        data: totalPendingLeaves,
         message: "",
       });
     } catch (error) {

@@ -18,4 +18,8 @@ router.post("/rejectLeave/:id", LeaveController.rejectLeave); //reject leave
 router.get("/getLeaveData/:id", LeaveController.getLeaveData); //get leave data
 router.post("/publicHolidayList", LeaveController.publicHolidayList); //get all public holiday list
 router.post("/getUpcomingLeaves/:userId", LeaveController.getUpcomingLeaves);
+router.post(
+  "/getTotalPendigLeaves/:userId",
+  LeaveController.getTotalPendigLeaves
+);
 module.exports = router;
