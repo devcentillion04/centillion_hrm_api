@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-let CONNECTION_URL = `${process.env.MONGO_URL}/${process.env.MONGO_DB}?authSource=admin`;
+let CONNECTION_URL = `${process.env.MONGO_URL}/${process.env.MONGO_DB}`;
 module.exports = mongoose
   .connect(CONNECTION_URL, {
     useNewUrlParser: true,
