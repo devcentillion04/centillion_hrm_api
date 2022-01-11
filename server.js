@@ -3,11 +3,8 @@ const { json, urlencoded } = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 
-console.log(process.env.DOTENV_CONFIG_PATH);
-
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
 
-// console.log(process.env);
 require("./app/config/db/connection");
 const clientRoutes = require("./app/routes/index");
 const adminRoutes = require("./app/routes/admin");

@@ -10,15 +10,19 @@ const LeavesManagement = new Schema(
     },
     reason: {
       type: String,
+      required: true,
     },
-    leaveTypes: {
+    leaveType: {
       type: String,
+      required: true,
     },
     leaveFrom: {
       type: Date,
+      required: true,
     },
     leaveTo: {
       type: Date,
+      required: true,
     },
     status: {
       type: String,
@@ -26,6 +30,30 @@ const LeavesManagement = new Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    approvedBy: {
+      type: Array,
+      ref: "User",
+    },
+    rejectedBy: {
+      type: Array,
+      ref: "User",
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
+    },
+    totalDay: {
+      type: Number,
+    },
+    isPaid: {
+      type: Boolean,
+    },
+    approveDate: {
+      type: Date,
+    },
+    rejectDate: {
+      type: Date,
     },
   },
   {

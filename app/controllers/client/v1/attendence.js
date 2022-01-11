@@ -70,7 +70,7 @@ class AttendanceController {
               },
             },
           };
-          if (attendance.workingHours) {
+          if ((attendance.workingHou, rs)) {
             time =
               moment(dataTime.$push.entry.Out).diff(abvc?.In, "milliseconds") +
               attendance.workingHours;
@@ -199,6 +199,102 @@ class AttendanceController {
         success: true,
         data: attendence,
       });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async clock(req, res) {
+    try {
+      let loggedInUser = req.currentUser;
+      let criteria = {
+        userId: loggedInUser._id,
+        workDate: moment().startOf("day").utc(true).toISOString(),
+      };
+      let payload = {};
+
+      let existing_attendance = await Attendance.findOne(criteria);
+      if (existing_attendance) {
+        let attendance_entries = existing_attendance.entry;
+        let last_attendance_entry =
+          attendance_entries[attendance_entries.length - 1];
+        if (last_attendance_entry?.In && last_attendance_entry?.Out) {
+          let entry_payload = {
+            In: moment().utc(true).toISOString(),
+          };
+          attendance_entries.push(entry_payload);
+        } else {
+          last_attendance_entry.Out = moment().utc(true).toISOString();
+        }
+
+        let minutes = moment(last_attendance_entry.Out).diff(
+          last_attendance_entry.In,
+          "minutes"
+        );
+
+        console;
+
+        payload = {
+          entry: attendance_entries,
+          workingHours: minutes,
+        };
+      } else {
+        payload = {
+          ...criteria,
+          clockIn: moment().utc(true).toISOString(),
+          entry: {
+            In: moment().utc(true).toISOString(),
+          },
+        };
+      }
+
+      let attendance = await Attendance.findOneAndUpdate(criteria, payload, {
+        upsert: true,
+        new: true,
+      }).lean();
+
+      let last_attendance_entry = attendance?.entry.length
+        ? attendance?.entry[attendance?.entry.length - 1]
+        : null;
+
+      let result = {
+        ...attendance,
+        clock:
+          last_attendance_entry?.In && last_attendance_entry?.Out
+            ? "CLOCK IN"
+            : last_attendance_entry?.Out
+            ? "CLOCK IN"
+            : "CLOCK OUT",
+      };
+
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async getCurrentUserAttendance(req, res) {
+    try {
+      let loggedInUser = req.currentUser;
+      let criteria = {
+        userId: loggedInUser._id,
+        workDate: moment().startOf("day").utc(true).toISOString(),
+      };
+
+      let attendance = await Attendance.findOne(criteria).lean();
+      let last_attendance_entry = attendance?.entry.length
+        ? attendance?.entry[attendance?.entry.length - 1]
+        : null;
+      let result = {
+        ...attendance,
+        clock:
+          last_attendance_entry?.In && last_attendance_entry?.Out
+            ? "CLOCK IN"
+            : last_attendance_entry?.Out
+            ? "CLOCK IN"
+            : "CLOCK OUT",
+      };
+      return res.status(200).json({ success: true, data: result });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
