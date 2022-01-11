@@ -6,18 +6,12 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let { page, limit, sortField, sortValue } = req.query;
-    let sort = {};
-    let whereClause = {};
-    if (sortField) {
-      sort = {
-        [sortField]: sortValue === "ASC" ? 1 : -1,
-      };
-    } else {
-      sort = {
-        name: 1,
-      };
-    }
+    let sort_key = req.query.sortField || "createdAt";
+    let sort_direction = req.query.sortValue === "ASC" ? 1 : -1;
+    let criteria = {
+      userId: req.currentUser._id,
+    };
+
     var populateData = {
       path: "userId",
       select: ["email", "firstname", "lastname", "profile"],

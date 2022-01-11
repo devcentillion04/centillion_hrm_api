@@ -299,6 +299,12 @@ class AttendanceController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  async getUserAllAttendance(req, res) {
+    try {
+      console.log(req.currentUser);
+    } catch (error) {}
+  }
 }
 
 module.exports = new AttendanceController();

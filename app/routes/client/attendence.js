@@ -5,6 +5,7 @@ const auth = require("../../middleware/authorization");
 
 router.post("/clock", auth, attendance.clock);
 router.get("/me", auth, attendance.getCurrentUserAttendance);
+router.get("/my-attendance", auth, attendance.getUserAllAttendance);
 router.post("/create", auth, attendance.create);
 router.get("/:id", auth, attendance.index);
 router.get("/show/:id", auth, attendance.show);
