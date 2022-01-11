@@ -1,9 +1,59 @@
 const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
+const constants = require("../../../constants/constants");
 const moment = require("moment");
 const timezone = "+5:30";
-
+let publicHolidayList = {
+  holidayList: [
+    {
+      holidayName: "Makar Sankranti",
+      holidayDate: "14/01/2022",
+    },
+    {
+      holidayName: "Republic Day",
+      holidayDate: "26/01/2022",
+    },
+    {
+      holidayName: "Holi",
+      holidayDate: "18/03/2022",
+    },
+    {
+      holidayName: "Ramzan Eid",
+      holidayDate: "03/05/2022",
+    },
+    {
+      holidayName: "Rakshbandhan",
+      holidayDate: "11/08/2022",
+    },
+    {
+      holidayName: "Independence Day",
+      holidayDate: "15/08/2022",
+    },
+    {
+      holidayName: "Janmashtami",
+      holidayDate: "18/08/2022",
+    },
+    {
+      holidayName: "Diwali",
+      holidayDate: "24/10/2022",
+    },
+    {
+      holidayName: "New Year",
+      holidayDate: "25/10/2022",
+    },
+    {
+      holidayName: "Bhai Dooj",
+      holidayDate: "26/10/2022",
+    },
+    {
+      holidayName: "Christmas",
+      holidayDate: "25/12/2022",
+    },
+  ],
+  year: "2022",
+  isDeleted: false,
+};
 class LeaveController {
   async index(req, res) {
     let { page, limit, sortField, sortValue } = req.query;
@@ -32,9 +82,11 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find(criteria).sort({
-            [sort_key]: sort_direction,
-          }).populate({path: "userId"});
+        : await LeavesManagement.find(criteria)
+            .sort({
+              [sort_key]: sort_direction,
+            })
+            .populate({ path: "userId" });
 
     return res
       .status(200)
@@ -46,6 +98,7 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async applyLeave(req, res) {
     try {
@@ -53,7 +106,7 @@ class LeaveController {
         ...req.body,
         leaveFrom: req.body.leaveFrom,
         leaveTo: req.body.leaveTo,
-        status: "pending",
+        status: constants.CONSTANTS.LEAVE_STATUS.PENDING,
       };
       //find user data
       let userData = await UserSchema.findOne(
@@ -67,10 +120,10 @@ class LeaveController {
         }
       );
       let totalPendingLeaves = 0;
-      if (data.type == "PaidLeave") {
+      if (data.type == constants.CONSTANTS.LEAVE.TYPES.PAIDLEAVE) {
         let leaveDocs = await LeavesManagement.find(
           {
-            status: "pending",
+            status: constants.CONSTANTS.LEAVE_STATUS.PENDING,
             isDeleted: false,
             userId: req.params.id,
             isPaid: true,
@@ -91,12 +144,12 @@ class LeaveController {
       if (leaveFlag) {
         let leaveCount;
         if (
-          data.leaveType == "First-Half-Leave" ||
-          data.leaveType == "Second-Half-Leave"
+          data.leaveType == constants.CONSTANTS.LEAVE_TYPE.FIRST_HALF_LEAVE ||
+          data.leaveType == constants.CONSTANTS.LEAVE_TYPE.SECOND_HALF_LEAVE
         ) {
           leaveCount = 0.5;
         }
-        if (data.leaveType == "FullLeave") {
+        if (data.leaveType == constants.CONSTANTS.LEAVE_TYPE.FULL_DAY) {
           leaveCount = 1;
         }
         let leaveDaysCount = workingDaysCount(start, end);
@@ -104,56 +157,7 @@ class LeaveController {
         //   isDeleted: false,
         //   year: "2022",
         // });
-        let publicHolidayList = {
-          holidayList: [
-            {
-              holidayName: "Makar Sankranti",
-              holidayDate: "14/01/2022",
-            },
-            {
-              holidayName: "Republic Day",
-              holidayDate: "26/01/2022",
-            },
-            {
-              holidayName: "Holi",
-              holidayDate: "18/03/2022",
-            },
-            {
-              holidayName: "Ramzan Eid",
-              holidayDate: "03/05/2022",
-            },
-            {
-              holidayName: "Rakshbandhan",
-              holidayDate: "11/08/2022",
-            },
-            {
-              holidayName: "Independence Day",
-              holidayDate: "15/08/2022",
-            },
-            {
-              holidayName: "Janmashtami",
-              holidayDate: "18/08/2022",
-            },
-            {
-              holidayName: "Diwali",
-              holidayDate: "24/10/2022",
-            },
-            {
-              holidayName: "New Year",
-              holidayDate: "25/10/2022",
-            },
-            {
-              holidayName: "Bhai Dooj",
-              holidayDate: "26/10/2022",
-            },
-            {
-              holidayName: "Christmas",
-              holidayDate: "25/12/2022",
-            },
-          ],
-          year: "2022",
-          isDeleted: false,
-        };
+
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
@@ -175,14 +179,14 @@ class LeaveController {
         if (
           (totalTakenLeave < userData.totalPaidLeave &&
             userData.totalAvailablePaidLeave >= data.totalDay &&
-            data.type == "PaidLeave") ||
-          data.type == "UnpaidLeave"
+            data.type == constants.CONSTANTS.LEAVE.TYPES.PAIDLEAVE) ||
+          data.type == constants.CONSTANTS.LEAVE.TYPES.UNPAIDLEAVE
         ) {
           let { id } = req.params;
-          if (data.type == "PaidLeave") {
+          if (data.type == constants.CONSTANTS.LEAVE.TYPES.PAIDLEAVE) {
             data.isPaid = true;
           }
-          if (data.type == "UnpaidLeave") {
+          if (data.type == constants.CONSTANTS.LEAVE.TYPES.UNPAIDLEAVE) {
             data.isPaid = false;
           }
 
@@ -213,14 +217,11 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async update(req, res) {
     try {
-<<<<<<< HEAD
-      let payload = {
-=======
       let data = {
->>>>>>> 3e118584ee973f56daf74e6bfb5c3caff5de170f
         ...req.body,
         leaveFrom: req.body.leaveFrom,
         leaveTo: req.body.leaveTo,
@@ -232,12 +233,12 @@ class LeaveController {
       if (leaveFlag) {
         let leaveCount;
         if (
-          data.leaveType == "First-Half-Leave" ||
-          data.leaveType == "Second-Half-Leave"
+          data.leaveType == constants.CONSTANTS.LEAVE_TYPE.FIRST_HALF_LEAVE ||
+          data.leaveType == constants.CONSTANTS.LEAVE_TYPE.SECOND_HALF_LEAVE
         ) {
           leaveCount = 0.5;
         }
-        if (data.leaveType == "FullLeave") {
+        if (data.leaveType == constants.CONSTANTS.LEAVE_TYPE.FULL_DAY) {
           leaveCount = 1;
         }
         let leaveDaysCount = workingDaysCount(start, end);
@@ -246,56 +247,7 @@ class LeaveController {
         //   isDeleted: false,
         //   year: currentYear,
         // });
-        let publicHolidayList = {
-          holidayList: [
-            {
-              holidayName: "Makar Sankranti",
-              holidayDate: "14/01/2022",
-            },
-            {
-              holidayName: "Republic Day",
-              holidayDate: "26/01/2022",
-            },
-            {
-              holidayName: "Holi",
-              holidayDate: "18/03/2022",
-            },
-            {
-              holidayName: "Ramzan Eid",
-              holidayDate: "03/05/2022",
-            },
-            {
-              holidayName: "Rakshbandhan",
-              holidayDate: "11/08/2022",
-            },
-            {
-              holidayName: "Independence Day",
-              holidayDate: "15/08/2022",
-            },
-            {
-              holidayName: "Janmashtami",
-              holidayDate: "18/08/2022",
-            },
-            {
-              holidayName: "Diwali",
-              holidayDate: "24/10/2022",
-            },
-            {
-              holidayName: "New Year",
-              holidayDate: "25/10/2022",
-            },
-            {
-              holidayName: "Bhai Dooj",
-              holidayDate: "26/10/2022",
-            },
-            {
-              holidayName: "Christmas",
-              holidayDate: "25/12/2022",
-            },
-          ],
-          year: "2022",
-          isDeleted: false,
-        };
+
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
@@ -310,14 +262,14 @@ class LeaveController {
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
         data.totalDay = leaveDaysCount * leaveCount;
 
-        if (data.type == "PaidLeave") {
+        if (data.type == constants.CONSTANTS.LEAVE.TYPES.PAIDLEAVE) {
           data.isPaid = true;
         }
-        if (data.type == "UnpaidLeave") {
+        if (data.type == constants.CONSTANTS.LEAVE.TYPES.UNPAIDLEAVE) {
           data.isPaid = false;
         }
 
-        await LeavesManagement.findOneAndUpdate(
+        await LeavesManagement.updateOne(
           {
             _id: req.params.id,
           },
@@ -385,11 +337,13 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async cancelLeave(req, res) {
     try {
+      //check leave approved or not
       if (req.body.isApproved) {
-        //get current leave data
+        //get current leave document
         let leaveData = await LeavesManagement.findOne(
           {
             _id: req.params.id,
@@ -434,13 +388,14 @@ class LeaveController {
           );
         }
       }
-      await LeavesManagement.findOneAndUpdate(
+      //if leave not approve then delete only leave documents
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
         {
           isDeleted: true,
-          status: "cancel",
+          status: constants.CONSTANTS.LEAVE_STATUS.CANCEL,
         }
       );
       return res.status(200).json({
@@ -458,15 +413,18 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async approveLeave(req, res) {
     try {
+      //get current leave document
       let leaveData = await LeavesManagement.findOne({
         _id: req.params.id,
       }).populate({
         path: "userId",
         select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
       });
+      //update status of leave document
       await LeavesManagement.updateOne(
         {
           _id: req.params.id,
@@ -474,18 +432,22 @@ class LeaveController {
         {
           approvedBy: req.body.approvedBy,
           isApproved: true,
-          status: "approved",
+          status: constants.CONSTANTS.LEAVE_STATUS.APPROVED,
           approveDate: moment(),
         }
       );
+      //decrease totalAvailablePaidLeave count of user doucment if leave type equal to paidLeave
       if (leaveData.isPaid == true) {
         leaveData.userId.totalAvailablePaidLeave =
           leaveData.userId.totalAvailablePaidLeave - leaveData.totalDay;
       }
+      //increase totalUnpaidLeave count of user document if leave type equal to unpaid
       if (leaveData.isPaid == false) {
         leaveData.userId.totalUnpaidLeave =
           leaveData.userId.totalUnpaidLeave - leaveData.totalDay;
       }
+
+      //update user document
       await UserSchema.updateOne(
         {
           _id: leaveData.userId._id,
@@ -511,17 +473,19 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async rejectLeave(req, res) {
     try {
-      await LeavesManagement.findOneAndUpdate(
+      //update status of current leave document
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
         {
           rejectedBy: req.body.rejectedBy,
           isApproved: false,
-          status: "rejected",
+          status: constants.CONSTANTS.LEAVE.TYPES.REJECTED,
           rejectDate: moment(),
         }
       );
@@ -540,9 +504,11 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async getLeaveData(req, res) {
     try {
+      //get all details about current leave document
       let leaveData = await LeavesManagement.findOne({
         _id: req.params.id,
       });
@@ -562,6 +528,7 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async publicHolidayList(req, res) {
     try {
@@ -630,14 +597,16 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async getUpcomingLeaves(req, res) {
     try {
+      //prepare condition for get all pending leave
       let condition = {
         isDeleted: {
           $ne: true,
         },
-        status: "pending",
+        status: constants.CONSTANTS.LEAVE_STATUS.PENDING,
         userId: req.params.userId,
       };
       condition["leaveFrom"] = {
@@ -666,12 +635,14 @@ class LeaveController {
    * @param {*} req
    * @param {*} res
    * @returns
+   * @createdBy Pooja Gohel
    */
   async getTotalPendigLeaves(req, res) {
     try {
+      //find all pending documents
       let leaveData = await LeavesManagement.find(
         {
-          status: "pending",
+          status: constants.CONSTANTS.LEAVE_STATUS.PENDING,
           isDeleted: false,
           userId: req.params.userId,
         },

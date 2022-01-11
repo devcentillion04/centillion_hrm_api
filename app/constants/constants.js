@@ -330,6 +330,23 @@ const CONSTANTS = {
     REGISTERMAIL: "Sallon Application Registration",
     FORGETPASSWORDEMAIL: "Sallon Application Forget Password",
   },
+  LEAVE_TYPE: {
+    FIRST_HALF_LEAVE: "First-Half-Leave",
+    SECOND_HALF_LEAVE: "Second-Half-Leave",
+    FULL_DAY: "FullLeave",
+  },
+  LEAVE_STATUS: {
+    PENDING: "pending",
+    CANCEL: "cancel",
+    APPROVED: "approved",
+    REJECTED: "rejected",
+  },
+  LEAVE: {
+    TYPES: {
+      PAIDLEAVE: "PaidLeave",
+      UNPAIDLEAVE: "UnpaidLeave",
+    },
+  },
 };
 
 module.exports = {
