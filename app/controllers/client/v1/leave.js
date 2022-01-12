@@ -54,7 +54,7 @@ class LeaveController {
       //find user data
       let userData = await UserSchema.findOne(
         {
-          _id: req.params.id,
+          _id: req.currentUser.id,
         },
         {
           totalAvailablePaidLeave: 1,

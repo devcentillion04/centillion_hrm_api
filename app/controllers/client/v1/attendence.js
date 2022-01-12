@@ -225,6 +225,9 @@ class AttendanceController {
           attendance_entries.push(entry_payload);
         } else {
           last_attendance_entry.Out = moment().utc(true).toISOString();
+          Object.assign(payload, {
+            clockOut: moment().utc(true).toISOString(),
+          });
         }
 
         let minutes = moment(last_attendance_entry.Out).diff(
@@ -232,9 +235,8 @@ class AttendanceController {
           "minutes"
         );
 
-        console;
-
         payload = {
+          ...payload,
           entry: attendance_entries,
           workingHours: minutes,
         };
@@ -302,8 +304,33 @@ class AttendanceController {
 
   async getUserAllAttendance(req, res) {
     try {
-      console.log(req.currentUser);
-    } catch (error) {}
+      let loggedInUser = req.currentUser;
+      let sort_key = req.query.sort_key || "createdAt";
+      let sort_direction = req.query.sort_value === "ASC" ? 1 : -1;
+      let page = Number(req.query.page) || 1;
+      let limit = Number(req.query.limit) || 10;
+      let criteria = {
+        userId: loggedInUser._id,
+      };
+
+      let options = {
+        page: page,
+        limit: limit,
+        [sort_key]: sort_direction,
+        populate: { path: "userId" },
+      };
+
+      let all_attendance =
+        req.query.page || req.query.limit
+          ? await Attendance.paginate(criteria, options)
+          : await Attendance.find(criteria).sort({
+              [sort_key]: sort_direction,
+            });
+
+      return res.status(200).json({ success: true, data: all_attendance });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
   }
 }
 
