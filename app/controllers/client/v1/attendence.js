@@ -264,9 +264,9 @@ class AttendanceController {
         clock:
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
-            : last_attendance_entry?.Out
-            ? "CLOCK IN"
-            : "CLOCK OUT",
+            : last_attendance_entry?.In
+            ? "CLOCK OUT"
+            : "CLOCK IN",
       };
 
       return res.status(200).json({ success: true, data: result });
