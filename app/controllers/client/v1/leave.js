@@ -6,7 +6,7 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let { page, limit, sortField, sortValue } = req.query;
+    let { page, limit, sortField, sortValue, criteria, sort_key, sort_direction} = req.query;
     let sort = {};
     let whereClause = {};
     if (sortField) {
@@ -32,11 +32,14 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find(criteria)
+        : await LeavesManagement.find({criteria})
             .sort({
               [sort_key]: sort_direction,
             })
-            .populate({ path: "userId" });
+            .populate({
+              path: "userId",
+              select: ["firstname", "lastname", "email", "profile"],
+            });
 
     return res
       .status(200)
@@ -173,7 +176,7 @@ class LeaveController {
           return res.status(200).json({ success: true, data: leaveData });
         } else {
           return res
-            .status(500)
+            .status(200)
             .json({ success: false, data: "Not Available for Paid Leave" });
         }
       } else {

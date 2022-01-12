@@ -19,15 +19,16 @@ class UserController {
       page: req.query.page || 1,
       limit: req.query.limit || 10,
       sort: { [sort_key]: sort_direction },
+      
     };
 
     let user =
       req.query.page || req.query.limit
-        ? await UserSchema.paginate(criteria, options)
-        : await UserSchema.find(criteria).sort({ [sort_key]: sort_direction });
+        ? await UserSchema.paginate({criteria, options,isDeleted:false})
+        : await UserSchema.find({criteria,isDeleted:false}).sort({ [sort_key]: sort_direction });
 
     // let user = await UserSchema.find(req.params.id);
-    return res.status(200).json({ success: true, data: user });
+    return res.status(200).json({ success: true, data: user.docs ? user.docs : user });
   }
   catch(error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -65,7 +66,7 @@ class UserController {
         { isDeleted: true },
         { upsert: true, new: true }
       );
-      return res.status(200).json({ success: true, data: [] });
+      return res.status(200).json({ success: true, data: [], message:'Delete Employee Successfully' });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
