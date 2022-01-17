@@ -4,6 +4,7 @@ const {
   findAllQuery,
   deleteOneQuery,
   updateOneQuery,
+  findbyIdRole,
 } = require("../../../services/admin/roleServices.js");
 const { isValidObjectId } = require("mongoose");
 const { userQuery } = require("../../../services/admin/userServices.js");
@@ -45,6 +46,25 @@ const createRole = async (req, res) => {
 const getRole = async (req, res) => {
   try {
     const { data } = await findAllQuery(req.query);
+    if (data) {
+      res.status(200).json({
+        success: true,
+        msg: "Role",
+        data: data,
+      });
+    } else {
+      throw new Error(ROLE.GETFAILED);
+    }
+  } catch (error) {
+    res.status(FAILED).json({
+      success: false,
+      error: error.message || FAILEDRESPONSE,
+    });
+  }
+};
+const getRoleById = async (req, res) => {
+  try {
+    const data  = await findbyIdRole({_id: req.params.id});
     if (data) {
       res.status(200).json({
         success: true,
@@ -136,4 +156,5 @@ module.exports = {
   getRole,
   updateRole,
   deleteRole,
+  getRoleById,
 };

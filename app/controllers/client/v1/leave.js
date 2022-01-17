@@ -300,9 +300,10 @@ class LeaveController {
           },
           data
         );
+        console.log("object,",data,req.params.id);
         return res
           .status(200)
-          .json({ success: true, data: "Successfully leave Data Updated" });
+          .json({ success: true, data: data, message:"Successfully leave Data Updated" });
       } else {
         return res
           .status(500)
