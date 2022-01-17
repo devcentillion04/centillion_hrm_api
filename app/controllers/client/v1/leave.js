@@ -6,12 +6,18 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let sort_key = req.query.sortField || "createdAt";
-    let sort_direction = req.query.sortValue === "ASC" ? 1 : -1;
-    let criteria = {
-      userId: req.currentUser._id,
-    };
-
+    let { page, limit, sortField, sortValue, criteria, sort_key, sort_direction} = req.query;
+    let sort = {};
+    let whereClause = {};
+    if (sortField) {
+      sort = {
+        [sortField]: sortValue === "ASC" ? 1 : -1,
+      };
+    } else {
+      sort = {
+        name: 1,
+      };
+    }
     var populateData = {
       path: "userId",
       select: ["email", "firstname", "lastname", "profile"],
@@ -26,11 +32,14 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find(criteria)
+        : await LeavesManagement.find({criteria})
             .sort({
               [sort_key]: sort_direction,
             })
-            .populate({ path: "userId" });
+            .populate({
+              path: "userId",
+              select: ["firstname", "lastname", "email", "profile"],
+            });
 
     return res
       .status(200)
@@ -54,7 +63,7 @@ class LeaveController {
       //find user data
       let userData = await UserSchema.findOne(
         {
-          _id: req.currentUser.id,
+          _id: req.params.id,
         },
         {
           totalAvailablePaidLeave: 1,
@@ -167,7 +176,7 @@ class LeaveController {
           return res.status(200).json({ success: true, data: leaveData });
         } else {
           return res
-            .status(500)
+            .status(200)
             .json({ success: false, data: "Not Available for Paid Leave" });
         }
       } else {

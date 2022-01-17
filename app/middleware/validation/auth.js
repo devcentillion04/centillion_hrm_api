@@ -22,7 +22,7 @@ const register = yup.object().shape({
   mobileno: yup
     .string()
     .matches(phoneRegExp, "Mobile Number is invalid")
-    .test("Only 10 number", (value) => value.length === 10)
+    // .test("Only 10 number", (value) => value.length === 10)
     .required("number is required")
     .required("Mobile Number is required"),
 });

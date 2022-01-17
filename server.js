@@ -6,7 +6,7 @@ const cors = require("cors");
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
 
 require("./app/config/db/connection");
-const clientRoutes = require("./app/routes/index");
+const clientRoutes = require("./app/routes");
 const adminRoutes = require("./app/routes/admin");
 const app = express();
 const router = express.Router();

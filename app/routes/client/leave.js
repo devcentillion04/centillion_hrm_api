@@ -4,7 +4,7 @@ const router = express.Router();
 const { validate, leaveSchema } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
 
-router.post("/apply-leave", [auth], LeaveController.applyLeave);
+router.post("/apply-leave/:id", [auth], LeaveController.applyLeave);
 router.get("/:id", LeaveController.show);
 router.get("/", auth, LeaveController.index);
 router.put("/update/:id", LeaveController.update); //update leave data

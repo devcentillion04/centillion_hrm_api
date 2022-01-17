@@ -15,9 +15,10 @@ const {
 } = CONSTANTS;
 const createRole = async (req, res) => {
   try {
+    
     const insertObj = {
       ...req.body,
-      createdBy: req.body.createdBy,
+      createdBy: req.currentUser._id
     };
     const findPermissions = await findAll({
       permission: req.body.permission,

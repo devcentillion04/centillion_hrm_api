@@ -6,6 +6,7 @@ const UserSchema = new Schema(
   {
     firstname: {
       type: String,
+      
     },
     lastname: {
       type: String,
@@ -80,7 +81,7 @@ const UserSchema = new Schema(
       default: false,
     },
     role: {
-      type: String,
+      type: mongoose.Types.ObjectId,
       ref: "role_type",
     },
     employeeType: {
@@ -104,7 +105,7 @@ const UserSchema = new Schema(
     },
     joiningDate: {
       type: Date,
-      required: true,
+      required: false,
     },
   },
   { timestamps: true, toJSON: { virtuals: true } }
