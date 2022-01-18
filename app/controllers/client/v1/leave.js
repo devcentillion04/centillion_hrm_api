@@ -6,9 +6,9 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let { page, limit, sortField, sortValue, criteria, sort_key, sort_direction} = req.query;
+    let { page, limit, sortField, sortValue, sort_key, sort_direction} = req.query;
     let sort = {};
-    let whereClause = {};
+    let criteria = {isDeleted: false};
     if (sortField) {
       sort = {
         [sortField]: sortValue === "ASC" ? 1 : -1,
@@ -331,7 +331,7 @@ class LeaveController {
       }
       let { page, limit, sortField, sortValue } = req.query;
       let sort = {};
-      let whereClause = {};
+      let whereClause = {isDeleted: false};
       if (sortField) {
         sort = {
           [sortField]: sortValue === "ASC" ? 1 : -1,

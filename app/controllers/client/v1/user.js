@@ -1,5 +1,6 @@
 const { UserSchema } = require("../../../models/user");
 const moment = require("moment");
+const { hashSync, genSaltSync, compare } = require("bcrypt");
 class UserController {
   async index(req, res) {
     let sort_key = req.query.sort_key || "name";
@@ -9,7 +10,7 @@ class UserController {
         : -1
       : 1;
 
-    let criteria = {};
+    let criteria = { isDeleted: false };
 
     if (req.query.type) {
       Object.assign(criteria, { type: req.query.type });
@@ -45,7 +46,13 @@ class UserController {
         { upsert: true, new: true }
       );
 
-      return res.status(200).json({ success: true, data: user });
+      return res
+        .status(200)
+        .json({
+          success: true,
+          data: user,
+          message: "User Update Successfully",
+        });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
@@ -65,9 +72,42 @@ class UserController {
         { isDeleted: true },
         { upsert: true, new: true }
       );
-      return res.status(200).json({ success: true, data: [] });
+      return res
+        .status(200)
+        .json({
+          success: true,
+          data: [],
+          message: "User Deleted successfully",
+        });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async updatePasseword(req, res) {
+    try {
+      let user = req.currentUser;
+      const match = await compare(req.body.old_password, user.password);
+      if (match) {
+        let payload = {
+          password: hashSync(req.body.password, genSaltSync(10)),
+        };
+        await UserSchema.findOneAndUpdate(payload, {
+          upsert: true,
+          new: false,
+        });
+        return res
+          .status(200)
+          .json({
+            success: true,
+            data: user,
+            message: "Password Update Successfully",
+          });
+      } else {
+        throw new Error("Old Password wrong!!!");
+      }
+    } catch (error) {
+      return res.status(200).json({ success: false, message: error.message });
     }
   }
 }
