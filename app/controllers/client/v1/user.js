@@ -59,7 +59,10 @@ class UserController {
   }
   async show(req, res) {
     try {
-      let user = await UserSchema.findById(req.params.id);
+      let user = await UserSchema.findById(req.params.id).populate({
+        path: "role",
+        select: ["name"]
+      });
       return res.status(200).json({ success: true, data: user });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

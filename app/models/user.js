@@ -6,7 +6,7 @@ const UserSchema = new Schema(
   {
     firstname: {
       type: String,
-      
+
     },
     lastname: {
       type: String,
@@ -21,9 +21,6 @@ const UserSchema = new Schema(
       type: Date,
     },
     mobileno: {
-      type: Number,
-    },
-    alternateMobileno: {
       type: Number,
     },
     address: {
@@ -55,6 +52,9 @@ const UserSchema = new Schema(
       },
     },
     bankDetails: {
+      accountHolderName: {
+        type: Number,
+      },
       bankName: {
         type: String,
       },
@@ -105,7 +105,9 @@ const UserSchema = new Schema(
     },
     joiningDate: {
       type: Date,
-      required: false,
+    },
+    Designation: {
+      type: String,
     },
   },
   { timestamps: true, toJSON: { virtuals: true } }
