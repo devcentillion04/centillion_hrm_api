@@ -224,7 +224,7 @@ class AttendanceController {
           };
           attendance_entries.push(entry_payload);
         } else {
-          last_attendance_entry.Out = moment().utc(true).toISOString();
+          last_attendance_entry.Out = moment().utc(false).toISOString();
           Object.assign(payload, {
             clockOut: moment().utc(true).toISOString(),
           });
@@ -265,8 +265,8 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.In
-            ? "CLOCK OUT"
-            : "CLOCK IN",
+              ? "CLOCK OUT"
+              : "CLOCK IN",
       };
 
       return res.status(200).json({ success: true, data: result });
@@ -293,8 +293,8 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.Out
-            ? "CLOCK IN"
-            : "CLOCK OUT",
+              ? "CLOCK IN"
+              : "CLOCK OUT",
       };
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
@@ -324,8 +324,8 @@ class AttendanceController {
         req.query.page || req.query.limit
           ? await Attendance.paginate(criteria, options)
           : await Attendance.find(criteria).sort({
-              [sort_key]: sort_direction,
-            });
+            [sort_key]: sort_direction,
+          });
 
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
