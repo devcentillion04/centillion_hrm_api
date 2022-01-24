@@ -6,6 +6,6 @@ const auth = require("../../middleware/authorization");
 
 router.post("/create/:userId", leaveAttendenceReqController.create);
 router.post("/approve/:id", auth, leaveAttendenceReqController.approve);
-router.put("/getAllRequestById/:userId", auth, leaveAttendenceReqController.getAllRequestById);
+router.put("/getallrequestbyid/:userId", auth, leaveAttendenceReqController.getAllRequestById);
 router.put("/delete/:id", leaveAttendenceReqController.delete);
 module.exports = router;
