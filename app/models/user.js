@@ -109,6 +109,10 @@ const UserSchema = new Schema(
     Designation: {
       type: String,
     },
+    teamLeader: {
+      type: mongoose.Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );

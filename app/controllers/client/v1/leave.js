@@ -6,9 +6,9 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let { page, limit, sortField, sortValue, sort_key, sort_direction} = req.query;
+    let { page, limit, sortField, sortValue, sort_key, sort_direction } = req.query;
     let sort = {};
-    let criteria = {isDeleted: false};
+    let criteria = { isDeleted: false };
     if (sortField) {
       sort = {
         [sortField]: sortValue === "ASC" ? 1 : -1,
@@ -32,14 +32,14 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find({criteria})
-            .sort({
-              [sort_key]: sort_direction,
-            })
-            .populate({
-              path: "userId",
-              select: ["firstname", "lastname", "email", "profile"],
-            });
+        : await LeavesManagement.find({ criteria })
+          .sort({
+            [sort_key]: sort_direction,
+          })
+          .populate({
+            path: "userId",
+            select: ["firstname", "lastname", "email", "profile"],
+          });
 
     return res
       .status(200)
@@ -56,10 +56,11 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: req.body.leaveFrom,
-        leaveTo: req.body.leaveTo,
+        leaveFrom: moment(req.body.leaveFrom).utc(false),
+        leaveTo: moment(req.body.leaveTo).utc(false),
         status: "pending",
       };
+      console.log(data);
       //find user data
       let userData = await UserSchema.findOne(
         {
@@ -72,6 +73,7 @@ class LeaveController {
       );
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
+
       let leaveFlag = moment().isSameOrBefore(start, "days");
       //check valid leave apply or not
       if (leaveFlag) {
@@ -85,6 +87,7 @@ class LeaveController {
         if (data.leaveType == "FullLeave") {
           leaveCount = 1;
         }
+
         let leaveDaysCount = workingDaysCount(start, end);
         // let publicHolidayList = await holidaySchema.findOne({
         //   isDeleted: false,
@@ -146,38 +149,47 @@ class LeaveController {
             let date = moment(element.holidayDate, "DD/MM/YYYY").format(
               "YYYY-MM-DD"
             );
-            if (moment(date).isBetween(start, end)) {
+            console.log(date);
+            if (moment(date).isBetween(start, end) || moment(date).isSame(start) || moment(date).isSame(end)) {
+              console.log(publicHolidayCount);
               publicHolidayCount++;
             }
           }
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
-        data.totalDay = leaveDaysCount * leaveCount;
-        //update isPaid flag accroding to leave type
-        if (
-          (userData.totalAvailablePaidLeave >= data.totalDay &&
-            data.type == "PaidLeave") ||
-          data.type == "UnpaidLeave"
-        ) {
-          let { id } = req.params;
-          if (data.type == "PaidLeave") {
-            data.isPaid = true;
-          }
-          if (data.type == "UnpaidLeave") {
-            data.isPaid = false;
-          }
+        if (leaveDaysCount > 0) {
+          console.log("leaveDaysCount" + leaveDaysCount);
+          data.totalDay = leaveDaysCount * leaveCount;
+          //update isPaid flag accroding to leave type
+          if (
+            (userData.totalAvailablePaidLeave >= data.totalDay &&
+              data.type == "PaidLeave") ||
+            data.type == "UnpaidLeave"
+          ) {
+            let { id } = req.params;
+            if (data.type == "PaidLeave") {
+              data.isPaid = true;
+            }
+            if (data.type == "UnpaidLeave") {
+              data.isPaid = false;
+            }
 
-          let leaveData = await new LeavesManagement({
-            ...data,
-            userId: id,
-          });
+            let leaveData = await new LeavesManagement({
+              ...data,
+              userId: id,
+            });
 
-          await leaveData.save(); //create leave document
-          return res.status(200).json({ success: true, data: leaveData });
+            await leaveData.save(); //create leave document
+
+          } else {
+            return res
+              .status(500)
+              .json({ success: false, data: "Not Available for Paid Leave" });
+          }
         } else {
           return res
-            .status(200)
-            .json({ success: false, data: "Not Available for Paid Leave" });
+            .status(500)
+            .json({ success: false, data: "Please Select valid Date" });
         }
       } else {
         return res
@@ -185,6 +197,7 @@ class LeaveController {
           .json({ success: false, data: "Please Select Valid Date" });
       }
     } catch (error) {
+      console.log(error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -300,10 +313,10 @@ class LeaveController {
           },
           data
         );
-        console.log("object,",data,req.params.id);
+        console.log("object,", data, req.params.id);
         return res
           .status(200)
-          .json({ success: true, data: data, message:"Successfully leave Data Updated" });
+          .json({ success: true, data: data, message: "Successfully leave Data Updated" });
       } else {
         return res
           .status(500)
@@ -331,7 +344,7 @@ class LeaveController {
       }
       let { page, limit, sortField, sortValue } = req.query;
       let sort = {};
-      let whereClause = {isDeleted: false};
+      let whereClause = { isDeleted: false };
       if (sortField) {
         sort = {
           [sortField]: sortValue === "ASC" ? 1 : -1,
