@@ -35,7 +35,7 @@ class designationController {
             let designation = await designationSchema.find({
                 isDeleted: false
             });
-            return res.status(200).json({ success: false, data: designation, message: "Successfully get all designation" });
+            return res.status(200).json({ success: true, data: designation, message: "Successfully get all designation" });
         } catch {
             return res.status(500).json({ success: false, message: error.message });
         }

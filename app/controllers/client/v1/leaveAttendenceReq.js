@@ -3,18 +3,19 @@ const { leaveAttendenceReqSchema } = require("../../../models/leaveAttendenceReq
 const moment = require("moment-timezone");
 const AttendanceSchema = require("../../../models/attendence");
 const { UserSchema } = require("../../../models/user");
+const { Types } = require("mongoose");
 class leaveAttendenceController {
 
     async create(req, res) {
         try {
             let userData = await UserSchema.findOne({
-                _id: req.params.userId,
+                _id: req.currentUser._id,
                 isDeleted: false
             }, {
                 teamLeader: 1
             });
             let requestData = {
-                userId: req.params.userId,
+                userId: req.currentUser._id,
                 requestedTo: userData.teamLeader,
                 ...req.body
             }
@@ -31,13 +32,13 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOneAndUpdate({
-                _id: req.params.id
+                _id: Types.ObjectId(req.params.id)
             }, {
-                approvedBy: req.user.id,
+                approvedBy: Types.ObjectId(req.currentUser._id),
                 isApproved: true
             });
             if (requestedData) {
-                if (requestedData.requestType == "attendence") {
+                if (requestedData.requestType == "attendance") {
                     let attendenceData = {
                         userId: requestedData.userId,
                         clockIn: moment(requestedData.clockIn).utc(false),
@@ -66,10 +67,15 @@ class leaveAttendenceController {
 
     async getAllRequestById(req, res) {
         try {
+            console.log('req.currentUser._id', req.currentUser._id)
             let requestedData = await leaveAttendenceReqSchema.find({
-                requestedTo: req.user.id,
-                isDeleted: false
-            });
+                requestedTo: req.currentUser._id,
+                isDeleted: false,
+                isApproved: false
+            }).populate({
+                path: "userId",
+                select: ["firstname", "lastname", "email", "profile"],
+            });;
             return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
@@ -78,15 +84,17 @@ class leaveAttendenceController {
 
     async delete(req, res) {
         try {
-            await leaveAttendenceReqSchema.updateOne({
-                _id: req.params.id,
+            console.log('req.params.id', req.params.id)
+            var data = await leaveAttendenceReqSchema.updateOne({
+                _id: Types.ObjectId(req.params.id),
                 isApproved: false
             }, {
                 isDeleted: true
             });
-
-            return res.status(200).json({ success: true, message: "Successfully deleted requestData" });
-
+            if (data.modifiedCount > 0)
+                return res.status(200).json({ success: true, message: "Successfully deleted requestData" });
+            else
+                return res.status(200).json({ success: false, message: "something right wrong" });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
         }

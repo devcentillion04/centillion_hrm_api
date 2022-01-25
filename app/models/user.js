@@ -106,7 +106,7 @@ const UserSchema = new Schema(
     joiningDate: {
       type: Date,
     },
-    Designation: {
+    designation: {
       type: String,
     },
     teamLeader: {

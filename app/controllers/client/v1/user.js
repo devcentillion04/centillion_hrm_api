@@ -95,7 +95,7 @@ class UserController {
         let payload = {
           password: hashSync(req.body.password, genSaltSync(10)),
         };
-        await UserSchema.findOneAndUpdate(payload, {
+        await UserSchema.findOneAndUpdate({ _id: user.id }, payload, {
           upsert: true,
           new: false,
         });
@@ -132,7 +132,7 @@ class UserController {
     }
   }
 
- 
+
 }
 
 module.exports = new UserController();

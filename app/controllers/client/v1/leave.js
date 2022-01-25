@@ -56,11 +56,10 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: moment(req.body.leaveFrom).utc(false),
-        leaveTo: moment(req.body.leaveTo).utc(false),
+        leaveFrom: req.body.leaveFrom,
+        leaveTo: req.body.leaveTo,
         status: "pending",
       };
-      console.log(data);
       //find user data
       let userData = await UserSchema.findOne(
         {
@@ -73,7 +72,6 @@ class LeaveController {
       );
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
-
       let leaveFlag = moment().isSameOrBefore(start, "days");
       //check valid leave apply or not
       if (leaveFlag) {
@@ -87,7 +85,6 @@ class LeaveController {
         if (data.leaveType == "FullLeave") {
           leaveCount = 1;
         }
-
         let leaveDaysCount = workingDaysCount(start, end);
         // let publicHolidayList = await holidaySchema.findOne({
         //   isDeleted: false,
@@ -149,47 +146,38 @@ class LeaveController {
             let date = moment(element.holidayDate, "DD/MM/YYYY").format(
               "YYYY-MM-DD"
             );
-            console.log(date);
-            if (moment(date).isBetween(start, end) || moment(date).isSame(start) || moment(date).isSame(end)) {
-              console.log(publicHolidayCount);
+            if (moment(date).isBetween(start, end)) {
               publicHolidayCount++;
             }
           }
         });
         leaveDaysCount = leaveDaysCount - publicHolidayCount;
-        if (leaveDaysCount > 0) {
-          console.log("leaveDaysCount" + leaveDaysCount);
-          data.totalDay = leaveDaysCount * leaveCount;
-          //update isPaid flag accroding to leave type
-          if (
-            (userData.totalAvailablePaidLeave >= data.totalDay &&
-              data.type == "PaidLeave") ||
-            data.type == "UnpaidLeave"
-          ) {
-            let { id } = req.params;
-            if (data.type == "PaidLeave") {
-              data.isPaid = true;
-            }
-            if (data.type == "UnpaidLeave") {
-              data.isPaid = false;
-            }
-
-            let leaveData = await new LeavesManagement({
-              ...data,
-              userId: id,
-            });
-
-            await leaveData.save(); //create leave document
-
-          } else {
-            return res
-              .status(500)
-              .json({ success: false, data: "Not Available for Paid Leave" });
+        data.totalDay = leaveDaysCount * leaveCount;
+        //update isPaid flag accroding to leave type
+        if (
+          (userData.totalAvailablePaidLeave >= data.totalDay &&
+            data.type == "PaidLeave") ||
+          data.type == "UnpaidLeave"
+        ) {
+          let { id } = req.params;
+          if (data.type == "PaidLeave") {
+            data.isPaid = true;
           }
+          if (data.type == "UnpaidLeave") {
+            data.isPaid = false;
+          }
+
+          let leaveData = await new LeavesManagement({
+            ...data,
+            userId: id,
+          });
+
+          await leaveData.save(); //create leave document
+          return res.status(200).json({ success: true, data: leaveData });
         } else {
           return res
-            .status(500)
-            .json({ success: false, data: "Please Select valid Date" });
+            .status(200)
+            .json({ success: false, data: "Not Available for Paid Leave" });
         }
       } else {
         return res
@@ -197,7 +185,6 @@ class LeaveController {
           .json({ success: false, data: "Please Select Valid Date" });
       }
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
