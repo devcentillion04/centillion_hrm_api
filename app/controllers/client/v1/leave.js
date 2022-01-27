@@ -555,6 +555,8 @@ class LeaveController {
    */
   async publicHolidayList(req, res) {
     try {
+      let currentYear = moment().year();
+      console.log(currentYear);
       let publicHolidayList = {
         holidayList: [
           {
@@ -602,7 +604,7 @@ class LeaveController {
             holidayDate: "25/12/2022",
           },
         ],
-        year: "2022",
+        year: currentYear,
         isDeleted: false,
       };
       return res.status(200).json({
@@ -611,7 +613,6 @@ class LeaveController {
         message: "",
       });
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
