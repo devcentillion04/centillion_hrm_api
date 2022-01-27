@@ -6,36 +6,40 @@ const { UserSchema } = require("../../../models/user");
 class leaveAttendenceController {
 
     async index(req, res) {
-        let sort_key = req.query.sort_key;
-        let sort_direction = req.query.sort_direction
-            ? req.query.sort_direction === "asc"
-                ? 1
-                : -1
-            : 1;
+        try {
+            let sort_key = req.query.sort_key;
+            let sort_direction = req.query.sort_direction
+                ? req.query.sort_direction === "asc"
+                    ? 1
+                    : -1
+                : 1;
 
-        let criteria = {};
+            let criteria = {};
 
-        if (req.query.type) {
-            Object.assign(criteria, { type: req.query.type });
+            if (req.query.type) {
+                Object.assign(criteria, { type: req.query.type });
+            }
+
+            const options = {
+                page: req.query.page || 1,
+                limit: req.query.limit || 10,
+                sort: { [sort_key]: sort_direction },
+            };
+
+            let data =
+                req.query.page || req.query.limit
+                    ? await leaveAttendenceReqSchema.paginate(criteria, options)
+                    : await leaveAttendenceReqSchema
+                        .find(criteria)
+                        .sort({ [sort_key]: sort_direction }).populate({
+                            path: "userId",
+                            select: ["firstname", "lastname", "email", "profile"],
+                        });
+
+            return res.status(200).json({ success: true, data: data });
+        } catch (error) {
+            return res.status(500).json({ succcess: false, message: error.message });
         }
-
-        const options = {
-            page: req.query.page || 1,
-            limit: req.query.limit || 10,
-            sort: { [sort_key]: sort_direction },
-        };
-
-        let data =
-            req.query.page || req.query.limit
-                ? await leaveAttendenceReqSchema.paginate(criteria, options)
-                : await leaveAttendenceReqSchema
-                    .find(criteria)
-                    .sort({ [sort_key]: sort_direction }).populate({
-                        path: "userId",
-                        select: ["firstname", "lastname", "email", "profile"],
-                    });
-
-        return res.status(200).json({ success: true, data: data });
     }
     /**
      * Create request entry for leave/attendence
@@ -49,7 +53,7 @@ class leaveAttendenceController {
             //find user data
             let userData = await UserSchema.findOne(
                 {
-                    _id: req.user.id,
+                    _id: req.params.id,
                     isDeleted: false
                 },
                 {
@@ -58,6 +62,7 @@ class leaveAttendenceController {
                     teamLeader: 1
                 }
             );
+            console.log(userData);
             if (req.body.requestType == "leave") {
                 let data = {
                     ...req.body,
@@ -162,6 +167,7 @@ class leaveAttendenceController {
                             if (data.type == "UnpaidLeave") {
                                 data.isPaid = false;
                             }
+                            console.log(data);
                             // let leaveData = await new LeavesManagement({
                             //     ...data,
                             //     userId: id,
@@ -192,7 +198,6 @@ class leaveAttendenceController {
                     ...req.body
                 }
                 let data = new leaveAttendenceReqSchema(requestData);
-
                 await data.save();
             }
             return res.status(200).json({ success: true, message: "Request added successfully" });

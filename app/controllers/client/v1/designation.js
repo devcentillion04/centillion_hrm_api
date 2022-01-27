@@ -3,33 +3,37 @@ const { designationSchema } = require("../../../models/designation");
 class designationController {
 
     async index(req, res) {
-        let sort_key = req.query.sort_key || "designation";
-        let sort_direction = req.query.sort_direction
-            ? req.query.sort_direction === "asc"
-                ? 1
-                : -1
-            : 1;
+        try {
+            let sort_key = req.query.sort_key || "designation";
+            let sort_direction = req.query.sort_direction
+                ? req.query.sort_direction === "asc"
+                    ? 1
+                    : -1
+                : 1;
 
-        let criteria = {};
+            let criteria = {};
 
-        if (req.query.type) {
-            Object.assign(criteria, { type: req.query.type });
+            if (req.query.type) {
+                Object.assign(criteria, { type: req.query.type });
+            }
+
+            const options = {
+                page: req.query.page || 1,
+                limit: req.query.limit || 10,
+                sort: { [sort_key]: sort_direction },
+            };
+
+            let data =
+                req.query.page || req.query.limit
+                    ? await designationSchema.paginate(criteria, options)
+                    : await designationSchema
+                        .find(criteria)
+                        .sort({ [sort_key]: sort_direction });
+
+            return res.status(200).json({ success: true, data: data });
+        } catch (error) {
+            return res.status(500).json({ succcess: false, message: error.message });
         }
-
-        const options = {
-            page: req.query.page || 1,
-            limit: req.query.limit || 10,
-            sort: { [sort_key]: sort_direction },
-        };
-
-        let data =
-            req.query.page || req.query.limit
-                ? await designationSchema.paginate(criteria, options)
-                : await designationSchema
-                    .find(criteria)
-                    .sort({ [sort_key]: sort_direction });
-
-        return res.status(200).json({ success: true, data: data });
     }
 
     /**
