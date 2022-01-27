@@ -283,15 +283,9 @@ class leaveAttendenceController {
         }
     }
 
-    /**
-     * get all requested entry by team leader id
-     * @param {*} req 
-     * @param {*} res 
-     * @returns 
-     */
+
     async getAllRequestById(req, res) {
         try {
-
             let requestedData = await leaveAttendenceReqSchema.find({
                 requestedTo: req.currentUser._id,
                 isDeleted: false,
