@@ -124,7 +124,7 @@ class UserController {
   async getTeamDataById(req, res) {
     try {
       let users = await UserSchema.find({
-        teamLeader: req.user.id,
+        teamLeader: req.currentUser._id,
         isDeleted: false,
       }, {
         firstname: 1,
@@ -132,8 +132,8 @@ class UserController {
         email: 1,
         mobileno: 1,
         isDeleted: 1,
-        profile :1,
-        employeeType : 1,
+        profile: 1,
+        employeeType: 1,
       });
       return res.status(200).json({ success: true, data: users });
     } catch (error) {

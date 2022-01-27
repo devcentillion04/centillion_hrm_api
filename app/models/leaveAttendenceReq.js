@@ -51,11 +51,10 @@ const leaveAttendenceReqSchema = new Schema(
         },
         leaveType: {
             type: String,
-            required: true,
-          },
-          totalDay: {
+        },
+        totalDay: {
             type: Number,
-          },
+        },
         requestedTo: {
             type: mongoose.Types.ObjectId,
             ref: "User",
@@ -63,7 +62,7 @@ const leaveAttendenceReqSchema = new Schema(
         isApproved: {
             type: Boolean,
             default: false,
-          },
+        },
     },
     {
         timestamps: true,

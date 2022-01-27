@@ -54,7 +54,7 @@ class leaveAttendenceController {
         try {
             let userData = await UserSchema.findOne(
                 {
-                    _id: req.user.id,
+                    _id: req.currentUser._id,
                     isDeleted: false
                 },
                 {
@@ -66,11 +66,12 @@ class leaveAttendenceController {
             let data = {
                 ...req.body,
                 requestedTo: userData.teamLeader,
-                userId: req.user.id
+                userId: req.currentUser._id
             }
             if (req.body.requestType == "leave") {
-                data.startDate = moment(req.body.startDate).utc(true);
-                data.endDate = moment(req.body.endDate).utc(true);
+
+                data.startDate = moment(req.body.startDate).utc(true).toISOString()
+                data.endDate = moment(req.body.endDate).utc(true).toISOString()
                 let start = moment(data.startDate, "YYYY-MM-DD");
                 let end = moment(data.endDate, "YYYY-MM-DD");
                 let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -194,7 +195,7 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
-                _id: req.user.id
+                _id: req.currentUser._id
             }).populate({
                 path: "userId",
                 select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
@@ -266,7 +267,7 @@ class leaveAttendenceController {
                         _id: req.params.id
                     }, {
                         // approvedBy: Types.ObjectId(req.currentUser._id),
-                        approvedBy: req.user.id,
+                        approvedBy: req.currentUser._id,
                         isApproved: true
                     });
                     return res.status(200).json({ success: true, message: "Successfully " + requesTypeData.requestType + "Document Added" });
@@ -282,27 +283,25 @@ class leaveAttendenceController {
         }
     }
 
-    /**
-     * get all requested entry by team leader id
-     * @param {*} req 
-     * @param {*} res 
-     * @returns 
-     */
-    async getAllRequestById(req, res) {
-        try {
 
-            let requestedData = await leaveAttendenceReqSchema.find({
-                requestedTo: req.user.id,
-                isDeleted: false,
-                isApproved: false
-            }).populate({
-                path: "userId",
-                select: ["firstname", "lastname", "email", "profile"],
-            });;
-            return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
-        } catch (error) {
-            return res.status(500).json({ success: false, message: error.message });
-        }
+    async getAllRequestById(req, res) {
+        console.log(req.body, "-----------------------------------");
+        // try {
+        //     console.log("requestedData")
+
+        //     // let requestedData = await leaveAttendenceReqSchema.find({
+        //     //     requestedTo: req.currentUser._id,
+        //     //     isDeleted: false,
+        //     //     isApproved: false
+        //     // }).populate({
+        //     //     path: "userId",
+        //     //     select: ["firstname", "lastname", "email", "profile"],
+        //     // });
+        //     // console.log(requestedData)
+        //     // return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
+        // } catch (error) {
+        //     return res.status(500).json({ success: false, message: error.message });
+        // }
     }
 
 
