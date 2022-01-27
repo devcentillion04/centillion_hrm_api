@@ -56,8 +56,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: moment(req.body.leaveFrom).utc(false),
-        leaveTo: moment(req.body.leaveTo).utc(false),
+        leaveFrom: moment(req.body.leaveFrom).utc(true),
+        leaveTo: moment(req.body.leaveTo).utc(true),
         status: "pending",
       };
       //find user data
@@ -199,8 +199,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: moment(req.body.leaveFrom).utc(false),
-        leaveTo: moment(req.body.leaveTo).utc(false),
+        leaveFrom: moment(req.body.leaveFrom).utc(true),
+        leaveTo: moment(req.body.leaveTo).utc(true),
       };
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");

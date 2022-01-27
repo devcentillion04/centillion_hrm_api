@@ -69,8 +69,8 @@ class leaveAttendenceController {
                 userId: req.currentUser._id
             }
             if (req.body.requestType == "leave") {
-                data.startDate = moment(req.body.startDate).utc(false);
-                data.endDate = moment(req.body.endDate).utc(false);
+                data.startDate = moment(req.body.startDate).utc(true);
+                data.endDate = moment(req.body.endDate).utc(true);
                 let start = moment(data.startDate, "YYYY-MM-DD");
                 let end = moment(data.endDate, "YYYY-MM-DD");
                 let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -205,9 +205,9 @@ class leaveAttendenceController {
                 if (requestedData.requestType == "attendance") {
                     let attendenceData = {
                         userId: requestedData.userId,
-                        clockIn: moment(requestedData.clockIn).utc(false),
-                        workDate: moment(requestedData.clockIn).startOf("day").utc(false).toISOString(),
-                        clockOut: moment(requestedData.clockOut).utc(false),
+                        clockIn: moment(requestedData.clockIn).utc(true),
+                        workDate: moment(requestedData.clockIn).startOf("day").utc(true).toISOString(),
+                        clockOut: moment(requestedData.clockOut).utc(true),
                         workingHours: requestedData.totalHours
                     }
                     let data = await new AttendanceSchema({
