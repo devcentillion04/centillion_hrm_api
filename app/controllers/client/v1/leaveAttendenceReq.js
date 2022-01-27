@@ -69,8 +69,8 @@ class leaveAttendenceController {
                 userId: req.currentUser._id
             }
             if (req.body.requestType == "leave") {
-                data.startDate = moment(req.body.startDate).utc(true);
-                data.endDate = moment(req.body.endDate).utc(true);
+                data.startDate = moment(req.body.startDate).utc(false);
+                data.endDate = moment(req.body.endDate).utc(false);
                 let start = moment(data.startDate, "YYYY-MM-DD");
                 let end = moment(data.endDate, "YYYY-MM-DD");
                 let leaveFlag = moment().isSameOrBefore(start, "days");

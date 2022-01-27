@@ -1,7 +1,7 @@
 const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
-const moment = require("moment");
+const moment = require("moment-timezone");
 const timezone = "+5:30";
 
 class LeaveController {
@@ -56,8 +56,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: moment(req.body.leaveFrom).utc(true),
-        leaveTo: moment(req.body.leaveTo).utc(true),
+        leaveFrom: moment(req.body.leaveFrom).utc(false),
+        leaveTo: moment(req.body.leaveTo).utc(false),
         status: "pending",
       };
       //find user data
@@ -199,9 +199,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: moment(req.body.leaveFrom).utc(true),
-        leaveTo: moment(req.body.leaveTo).utc(true),
-
+        leaveFrom: moment(req.body.leaveFrom).utc(false),
+        leaveTo: moment(req.body.leaveTo).utc(false),
       };
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
@@ -543,7 +542,7 @@ class LeaveController {
    */
   async publicHolidayList(req, res) {
     try {
-      let currentYear = moment().year();    
+      let currentYear = moment().year();
       let publicHolidayList = {
         holidayList: [
           {
@@ -605,7 +604,7 @@ class LeaveController {
   }
 
   async getUpcomingLeaves(req, res) {
-    try {    
+    try {
       let condition = {
         isDeleted: {
           $ne: true,
@@ -616,7 +615,7 @@ class LeaveController {
       condition["leaveFrom"] = {
         $gte: getUtcTime(req.body.leaveFrom, timezone, "YYYY/MM/DD HH:mm:ss"),
       };
-     
+
       let query = [
         {
           $match: condition,
