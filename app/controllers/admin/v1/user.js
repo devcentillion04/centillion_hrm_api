@@ -10,7 +10,7 @@ class UserController {
     async assignTeamLeader(req, res) {
         try {
             let user = await UserSchema.updateOne({
-                _id: req.user.id
+                _id: req.currentUser._id
             }, {
                 teamLeader: req.body.userId
             });

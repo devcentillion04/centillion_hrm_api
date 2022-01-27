@@ -54,7 +54,7 @@ class leaveAttendenceController {
         try {
             let userData = await UserSchema.findOne(
                 {
-                    _id: req.user.id,
+                    _id: req.currentUser._id,
                     isDeleted: false
                 },
                 {
@@ -66,7 +66,7 @@ class leaveAttendenceController {
             let data = {
                 ...req.body,
                 requestedTo: userData.teamLeader,
-                userId: req.user.id
+                userId: req.currentUser._id
             }
             if (req.body.requestType == "leave") {
                 data.startDate = moment(req.body.startDate).utc(true);
@@ -186,6 +186,7 @@ class leaveAttendenceController {
                 return res.status(200).json({ success: true, message: "Attendance Request added successfully" });
             }
         } catch (error) {
+            console.log(error);
             return res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -194,7 +195,7 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
-                _id: req.user.id
+                _id: req.currentUser._id
             }).populate({
                 path: "userId",
                 select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
@@ -266,7 +267,7 @@ class leaveAttendenceController {
                         _id: req.params.id
                     }, {
                         // approvedBy: Types.ObjectId(req.currentUser._id),
-                        approvedBy: req.user.id,
+                        approvedBy: req.currentUser._id,
                         isApproved: true
                     });
                     return res.status(200).json({ success: true, message: "Successfully " + requesTypeData.requestType + "Document Added" });
@@ -292,7 +293,7 @@ class leaveAttendenceController {
         try {
 
             let requestedData = await leaveAttendenceReqSchema.find({
-                requestedTo: req.user.id,
+                requestedTo: req.currentUser._id,
                 isDeleted: false,
                 isApproved: false
             }).populate({
