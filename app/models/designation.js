@@ -5,10 +5,10 @@ const Schema = mongoose.Schema;
 
 const designationSchema = new Schema(
     {
-        designation: {
+        label: {
             type: String
         },
-        label: {
+        value: {
             type: String
         },
         isDeleted: {

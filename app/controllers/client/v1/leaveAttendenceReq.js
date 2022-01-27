@@ -3,6 +3,8 @@ const { leaveAttendenceReqSchema } = require("../../../models/leaveAttendenceReq
 const moment = require("moment-timezone");
 const AttendanceSchema = require("../../../models/attendence");
 const { UserSchema } = require("../../../models/user");
+const { Types } = require("mongoose");
+const { LeavesManagement } = require("../../../models/leave");
 class leaveAttendenceController {
 
     async index(req, res) {
@@ -50,10 +52,9 @@ class leaveAttendenceController {
      */
     async create(req, res) {
         try {
-            //find user data
             let userData = await UserSchema.findOne(
                 {
-                    _id: req.params.id,
+                    _id: req.user.id,
                     isDeleted: false
                 },
                 {
@@ -62,15 +63,16 @@ class leaveAttendenceController {
                     teamLeader: 1
                 }
             );
-            console.log(userData);
+            let data = {
+                ...req.body,
+                requestedTo: userData.teamLeader,
+                userId: req.user.id
+            }
             if (req.body.requestType == "leave") {
-                let data = {
-                    ...req.body,
-                    leaveFrom: moment(req.body.startDate).utc(false),
-                    leaveTo: moment(req.body.endDate).utc(false)
-                };
-                let start = moment(data.leaveFrom, "YYYY-MM-DD");
-                let end = moment(data.leaveTo, "YYYY-MM-DD");
+                data.startDate = moment(req.body.startDate).utc(true);
+                data.endDate = moment(req.body.endDate).utc(true);
+                let start = moment(data.startDate, "YYYY-MM-DD");
+                let end = moment(data.endDate, "YYYY-MM-DD");
                 let leaveFlag = moment().isSameOrBefore(start, "days");
                 //check valid leave apply or not
                 if (leaveFlag) {
@@ -146,7 +148,6 @@ class leaveAttendenceController {
                                 "YYYY-MM-DD"
                             );
                             if (moment(date).isBetween(start, end) || moment(date).isSame(start) || moment(date).isSame(end)) {
-                                console.log(publicHolidayCount);
                                 publicHolidayCount++;
                             }
                         }
@@ -160,21 +161,9 @@ class leaveAttendenceController {
                                 data.type == "PaidLeave") ||
                             data.type == "UnpaidLeave"
                         ) {
-                            let { id } = req.params;
-                            if (data.type == "PaidLeave") {
-                                data.isPaid = true;
-                            }
-                            if (data.type == "UnpaidLeave") {
-                                data.isPaid = false;
-                            }
-                            console.log(data);
-                            // let leaveData = await new LeavesManagement({
-                            //     ...data,
-                            //     userId: id,
-                            // });
-
-                            // await leaveData.save(); //create leave document
-
+                            let reqData = await new leaveAttendenceReqSchema(data);
+                            await reqData.save();
+                            return res.status(200).json({ success: true, message: "Leave Request added successfully" });
                         } else {
                             return res
                                 .status(500)
@@ -192,15 +181,10 @@ class leaveAttendenceController {
                 }
 
             } else {
-                let requestData = {
-                    userId: req.user.id,
-                    requestedTo: userData.teamLeader,
-                    ...req.body
-                }
-                let data = new leaveAttendenceReqSchema(requestData);
-                await data.save();
+                let reqData = new leaveAttendenceReqSchema(data);
+                await reqData.save();
+                return res.status(200).json({ success: true, message: "Attendance Request added successfully" });
             }
-            return res.status(200).json({ success: true, message: "Request added successfully" });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
         }
@@ -209,14 +193,15 @@ class leaveAttendenceController {
     //Approve Request for leave/attendence by team leader
     async approve(req, res) {
         try {
-            let requestedData = await leaveAttendenceReqSchema.findOneAndUpdate({
-                _id: req.params.id
-            }, {
-                approvedBy: req.user.id,
-                isApproved: true
+            let requestedData = await leaveAttendenceReqSchema.findOne({
+                _id: req.user.id
+            }).populate({
+                path: "userId",
+                select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
             });
+            let isUpdateFlag = false;
             if (requestedData) {
-                if (requestedData.requestType == "attendence") {
+                if (requestedData.requestType == "attendance") {
                     let attendenceData = {
                         userId: requestedData.userId,
                         clockIn: moment(requestedData.clockIn).utc(false),
@@ -228,12 +213,65 @@ class leaveAttendenceController {
                         ...attendenceData,
                     });
                     await data.save();
-                    return res.status(200).json({ success: true, message: "Successfully " + requestedData.requestType + "Document Added" });
-                } else if (requestedData.requestType == "leave") {
+                    isUpdateFlag = true;
+                }
+                if (requestedData.requestType == "leave") {
+                    let data = {
+                        reason: requestedData.reason,
+                        leaveType: requestedData.leaveType,
+                        approvedBy: req.body.approvedBy,
+                        isApproved: true,
+                        status: "approved",
+                        approveDate: moment(),
+                        leaveFrom: requestedData.startDate,
+                        leaveTo: requestedData.endDate,
+                        totalDay: requestedData.totalDay,
+                        userId: requestedData.userId
+                    }
+                    if (requestedData.type == "PaidLeave") {
+                        data.isPaid = true;
+                    }
+                    if (requestedData.type == "UnpaidLeave") {
+                        data.isPaid = false;
+                    }
 
-                    return res.status(200).json({ success: true, message: "Successfully " + requestedData.requestType + "Document Added" });
+                    if (data.isPaid == true) {
+                        requestedData.userId.totalAvailablePaidLeave =
+                            requestedData.userId.totalAvailablePaidLeave - requestedData.totalDay;
+                    }
+                    if (data.isPaid == false) {
+                        requestedData.userId.totalUnpaidLeave =
+                            requestedData.userId.totalUnpaidLeave + requestedData.totalDay;
+                    }
+
+                    let leaveData = await new LeavesManagement({
+                        ...data,
+                        userId: req.body.approvedBy,
+                    });
+
+                    await leaveData.save(); //create leave document
+                    await UserSchema.updateOne(
+                        {
+                            _id: requestedData.userId,
+                        },
+                        {
+                            totalAvailablePaidLeave: requestedData.userId.totalAvailablePaidLeave,
+                            totalUnpaidLeave: requestedData.userId.totalUnpaidLeave,
+                        }
+                    );
+                    isUpdateFlag = true;
+                }
+                if (isUpdateFlag) {
+                    let requesTypeData = await leaveAttendenceReqSchema.findOneAndUpdate({
+                        _id: req.params.id
+                    }, {
+                        // approvedBy: Types.ObjectId(req.currentUser._id),
+                        approvedBy: req.user.id,
+                        isApproved: true
+                    });
+                    return res.status(200).json({ success: true, message: "Successfully " + requesTypeData.requestType + "Document Added" });
                 } else {
-                    return res.status(500).json({ success: false, message: "Invalid type found in request data" });
+                    return res.status(500).json({ success: false, message: "Error while proces request data" });
                 }
             } else {
                 return res.status(500).json({ success: false, message: "Error while update document" });
@@ -252,10 +290,15 @@ class leaveAttendenceController {
      */
     async getAllRequestById(req, res) {
         try {
+
             let requestedData = await leaveAttendenceReqSchema.find({
                 requestedTo: req.user.id,
-                isDeleted: false
-            });
+                isDeleted: false,
+                isApproved: false
+            }).populate({
+                path: "userId",
+                select: ["firstname", "lastname", "email", "profile"],
+            });;
             return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
@@ -283,6 +326,17 @@ class leaveAttendenceController {
             return res.status(500).json({ success: false, message: error.message });
         }
     }
+};
+
+const workingDaysCount = (start, end) => {
+    var first = start.clone().endOf("week"); // end of first week
+    var last = end.clone().startOf("week"); // start of last week
+    var days = (last.diff(first, "days") * 5) / 7; // this will always multiply of 7
+    var wfirst = first.day() - start.day(); // check first week
+    if (start.day() == 0) --wfirst; // -1 if start with sunday
+    var wlast = end.day() - last.day(); // check last week
+    if (end.day() == 6) --wlast; // -1 if end with saturday
+    return wfirst + Math.floor(days) + wlast; // get the total
 };
 
 
