@@ -2,6 +2,42 @@ const { designationSchema } = require("../../../models/designation");
 
 class designationController {
 
+    async index(req, res) {
+        let sort_key = req.query.sort_key || "designation";
+        let sort_direction = req.query.sort_direction
+            ? req.query.sort_direction === "asc"
+                ? 1
+                : -1
+            : 1;
+
+        let criteria = {};
+
+        if (req.query.type) {
+            Object.assign(criteria, { type: req.query.type });
+        }
+
+        const options = {
+            page: req.query.page || 1,
+            limit: req.query.limit || 10,
+            sort: { [sort_key]: sort_direction },
+        };
+
+        let data =
+            req.query.page || req.query.limit
+                ? await designationSchema.paginate(criteria, options)
+                : await designationSchema
+                    .find(criteria)
+                    .sort({ [sort_key]: sort_direction });
+
+        return res.status(200).json({ success: true, data: data });
+    }
+
+    /**
+     * Add designation
+     * @param {*} req role & label
+     * @param {*} res 
+     * @returns 
+     */
     async addDesignation(req, res) {
         try {
             let obj = {
@@ -15,9 +51,15 @@ class designationController {
         }
     }
 
+    /**
+     * Update designation by designation
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
     async updateDesignation(req, res) {
         try {
-            await designationSchema.findOneAndUpdate({
+            await designationSchema.updateOne({
                 _id: req.params.id,
                 isDeleted: false
             }, {
@@ -30,6 +72,12 @@ class designationController {
         }
     }
 
+    /**
+     * Get All designation list
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
     async getAllDesignation(req, res) {
         try {
             let designation = await designationSchema.find({
@@ -41,9 +89,15 @@ class designationController {
         }
     }
 
+    /**
+     * Delete designation by designation id
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
     async delete(req, res) {
         try {
-            await designationSchema.findOneAndUpdate({
+            await designationSchema.updateOne({
                 _id: req.params.id
             }, {
                 isDeleted: true

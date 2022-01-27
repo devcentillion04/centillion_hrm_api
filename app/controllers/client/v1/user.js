@@ -57,6 +57,7 @@ class UserController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async show(req, res) {
     try {
       let user = await UserSchema.findById(req.params.id).populate({
@@ -68,6 +69,7 @@ class UserController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async delete(req, res) {
     try {
       await UserSchema.findOneAndUpdate(
@@ -113,11 +115,16 @@ class UserController {
       return res.status(200).json({ success: false, message: error.message });
     }
   }
-
+  /**
+   * Get current user team data 
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
   async getTeamDataById(req, res) {
     try {
       let users = await UserSchema.find({
-        teamLeader: req.params.userId,
+        teamLeader: req.user.id,
         isDeleted: false,
       }, {
         firstname: 1,
@@ -125,6 +132,8 @@ class UserController {
         email: 1,
         mobileno: 1,
         isDeleted: 1,
+        profile :1,
+        employeeType : 1,
       });
       return res.status(200).json({ success: true, data: users });
     } catch (error) {
@@ -132,7 +141,6 @@ class UserController {
     }
   }
 
- 
 }
 
 module.exports = new UserController();

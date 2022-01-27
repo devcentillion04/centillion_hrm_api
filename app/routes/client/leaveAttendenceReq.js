@@ -4,8 +4,8 @@ const router = express.Router();
 const { validate } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
 
-router.post("/create/:userId", leaveAttendenceReqController.create);
+router.post("/create", auth, leaveAttendenceReqController.create);
 router.post("/approve/:id", auth, leaveAttendenceReqController.approve);
 router.put("/getallrequestbyid/:userId", auth, leaveAttendenceReqController.getAllRequestById);
-router.put("/delete/:id", leaveAttendenceReqController.delete);
+router.put("/delete/:id", auth, leaveAttendenceReqController.delete);
 module.exports = router;

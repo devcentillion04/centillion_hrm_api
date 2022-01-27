@@ -1,7 +1,6 @@
 const express = require("express");
 const LeaveController = require("../../controllers/client/v1/leave");
 const router = express.Router();
-const { validate, leaveSchema } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
 
 router.post("/applyleave/:id", [auth], LeaveController.applyLeave);

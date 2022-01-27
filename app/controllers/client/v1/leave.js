@@ -307,13 +307,12 @@ class LeaveController {
           data.isPaid = false;
         }
 
-        await LeavesManagement.findOneAndUpdate(
+        await LeavesManagement.updateOne(
           {
             _id: req.params.id,
           },
           data
         );
-        console.log("object,", data, req.params.id);
         return res
           .status(200)
           .json({ success: true, data: data, message: "Successfully leave Data Updated" });
@@ -425,7 +424,7 @@ class LeaveController {
           );
         }
       }
-      await LeavesManagement.findOneAndUpdate(
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
@@ -475,7 +474,7 @@ class LeaveController {
       }
       if (leaveData.isPaid == false) {
         leaveData.userId.totalUnpaidLeave =
-          leaveData.userId.totalUnpaidLeave - leaveData.totalDay;
+          leaveData.userId.totalUnpaidLeave + leaveData.totalDay;
       }
       await UserSchema.updateOne(
         {
@@ -505,7 +504,7 @@ class LeaveController {
    */
   async rejectLeave(req, res) {
     try {
-      await LeavesManagement.findOneAndUpdate(
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
