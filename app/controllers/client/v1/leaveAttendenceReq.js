@@ -69,9 +69,8 @@ class leaveAttendenceController {
                 userId: req.currentUser._id
             }
             if (req.body.requestType == "leave") {
-
-                data.startDate = moment(req.body.startDate).utc(true).toISOString()
-                data.endDate = moment(req.body.endDate).utc(true).toISOString()
+                data.startDate = moment(req.body.startDate).utc(false);
+                data.endDate = moment(req.body.endDate).utc(false);
                 let start = moment(data.startDate, "YYYY-MM-DD");
                 let end = moment(data.endDate, "YYYY-MM-DD");
                 let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -187,6 +186,7 @@ class leaveAttendenceController {
                 return res.status(200).json({ success: true, message: "Attendance Request added successfully" });
             }
         } catch (error) {
+            console.log(error);
             return res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -285,23 +285,19 @@ class leaveAttendenceController {
 
 
     async getAllRequestById(req, res) {
-        console.log(req.body, "-----------------------------------");
-        // try {
-        //     console.log("requestedData")
-
-        //     // let requestedData = await leaveAttendenceReqSchema.find({
-        //     //     requestedTo: req.currentUser._id,
-        //     //     isDeleted: false,
-        //     //     isApproved: false
-        //     // }).populate({
-        //     //     path: "userId",
-        //     //     select: ["firstname", "lastname", "email", "profile"],
-        //     // });
-        //     // console.log(requestedData)
-        //     // return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
-        // } catch (error) {
-        //     return res.status(500).json({ success: false, message: error.message });
-        // }
+        try {
+            let requestedData = await leaveAttendenceReqSchema.find({
+                requestedTo: req.currentUser._id,
+                isDeleted: false,
+                isApproved: false
+            }).populate({
+                path: "userId",
+                select: ["firstname", "lastname", "email", "profile"],
+            });;
+            return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: error.message });
+        }
     }
 
 

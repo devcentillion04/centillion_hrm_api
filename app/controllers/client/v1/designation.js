@@ -111,6 +111,22 @@ class designationController {
             return res.status(500).json({ success: false, message: error.message });
         }
     }
+
+
+    async getDesignation(req, res) {
+        try {
+            let designationData = await designationSchema.findOne({
+                _id: req.params.id,
+                isDeleted: false
+            });
+
+            return res.status(200).json({ success: true, message: "Successfully get Designation", data: designationData });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: error.message });
+        }
+
+    };
+
 };
 
 module.exports = new designationController();
