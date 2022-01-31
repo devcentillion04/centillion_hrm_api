@@ -195,7 +195,7 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
-                _id: req.currentUser._id
+                _id: req.params.id
             }).populate({
                 path: "userId",
                 select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
@@ -266,16 +266,16 @@ class leaveAttendenceController {
                     let requesTypeData = await leaveAttendenceReqSchema.findOneAndUpdate({
                         _id: req.params.id
                     }, {
-                        // approvedBy: Types.ObjectId(req.currentUser._id),
+
                         approvedBy: req.currentUser._id,
                         isApproved: true
                     });
                     return res.status(200).json({ success: true, message: "Successfully " + requesTypeData.requestType + "Document Added" });
                 } else {
-                    return res.status(500).json({ success: false, message: "Error while proces request data" });
+                    throw new Error("Error while proces request data")
                 }
             } else {
-                return res.status(500).json({ success: false, message: "Error while update document" });
+                throw new Error("Error while update document")
             }
 
         } catch (error) {
