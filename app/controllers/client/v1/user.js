@@ -57,6 +57,7 @@ class UserController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async show(req, res) {
     try {
       let user = await UserSchema.findById(req.params.id).populate({
@@ -68,6 +69,7 @@ class UserController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
   async delete(req, res) {
     try {
       await UserSchema.findOneAndUpdate(
@@ -95,7 +97,7 @@ class UserController {
         let payload = {
           password: hashSync(req.body.password, genSaltSync(10)),
         };
-        await UserSchema.findOneAndUpdate(payload, {
+        await UserSchema.findOneAndUpdate({ _id: user.id }, payload, {
           upsert: true,
           new: false,
         });
@@ -113,6 +115,32 @@ class UserController {
       return res.status(200).json({ success: false, message: error.message });
     }
   }
+  /**
+   * Get current user team data 
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
+  async getTeamDataById(req, res) {
+    try {
+      let users = await UserSchema.find({
+        teamLeader: req.currentUser._id,
+        isDeleted: false,
+      }, {
+        firstname: 1,
+        lastname: 1,
+        email: 1,
+        mobileno: 1,
+        isDeleted: 1,
+        profile: 1,
+        employeeType: 1,
+      });
+      return res.status(200).json({ success: true, data: users });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
 }
 
 module.exports = new UserController();

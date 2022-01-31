@@ -8,5 +8,7 @@ router.get("/:id", auth, User.show);
 router.put("/update/:id", [auth], User.update);
 router.delete("/delete/:id", [auth], User.delete);
 router.put("/change-password/", [auth], User.updatePasseword);
+router.get("/getteamdata", auth, User.getTeamDataById);
+
 
 module.exports = router;

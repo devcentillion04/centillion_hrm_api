@@ -1,14 +1,14 @@
 const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
 const holidaySchema = require("../../../models/publicHoliday");
-const moment = require("moment");
+const moment = require("moment-timezone");
 const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
-    let { page, limit, sortField, sortValue, sort_key, sort_direction} = req.query;
+    let { page, limit, sortField, sortValue, sort_key, sort_direction } = req.query;
     let sort = {};
-    let criteria = {isDeleted: false};
+    let criteria = { isDeleted: false };
     if (sortField) {
       sort = {
         [sortField]: sortValue === "ASC" ? 1 : -1,
@@ -32,14 +32,14 @@ class LeaveController {
     let leave =
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
-        : await LeavesManagement.find({criteria})
-            .sort({
-              [sort_key]: sort_direction,
-            })
-            .populate({
-              path: "userId",
-              select: ["firstname", "lastname", "email", "profile"],
-            });
+        : await LeavesManagement.find({ criteria })
+          .sort({
+            [sort_key]: sort_direction,
+          })
+          .populate({
+            path: "userId",
+            select: ["firstname", "lastname", "email", "profile"],
+          });
 
     return res
       .status(200)
@@ -56,8 +56,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: req.body.leaveFrom,
-        leaveTo: req.body.leaveTo,
+        leaveFrom: moment(req.body.leaveFrom).utc(false),
+        leaveTo: moment(req.body.leaveTo).utc(false),
         status: "pending",
       };
       //find user data
@@ -199,8 +199,8 @@ class LeaveController {
     try {
       let data = {
         ...req.body,
-        leaveFrom: req.body.leaveFrom,
-        leaveTo: req.body.leaveTo,
+        leaveFrom: moment(req.body.leaveFrom).utc(false),
+        leaveTo: moment(req.body.leaveTo).utc(false),
       };
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
@@ -294,16 +294,15 @@ class LeaveController {
           data.isPaid = false;
         }
 
-        await LeavesManagement.findOneAndUpdate(
+        await LeavesManagement.updateOne(
           {
             _id: req.params.id,
           },
           data
         );
-        console.log("object,",data,req.params.id);
         return res
           .status(200)
-          .json({ success: true, data: data, message:"Successfully leave Data Updated" });
+          .json({ success: true, data: data, message: "Successfully leave Data Updated" });
       } else {
         return res
           .status(500)
@@ -331,7 +330,7 @@ class LeaveController {
       }
       let { page, limit, sortField, sortValue } = req.query;
       let sort = {};
-      let whereClause = {isDeleted: false};
+      let whereClause = { isDeleted: false };
       if (sortField) {
         sort = {
           [sortField]: sortValue === "ASC" ? 1 : -1,
@@ -412,7 +411,7 @@ class LeaveController {
           );
         }
       }
-      await LeavesManagement.findOneAndUpdate(
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
@@ -462,7 +461,7 @@ class LeaveController {
       }
       if (leaveData.isPaid == false) {
         leaveData.userId.totalUnpaidLeave =
-          leaveData.userId.totalUnpaidLeave - leaveData.totalDay;
+          leaveData.userId.totalUnpaidLeave + leaveData.totalDay;
       }
       await UserSchema.updateOne(
         {
@@ -492,7 +491,7 @@ class LeaveController {
    */
   async rejectLeave(req, res) {
     try {
-      await LeavesManagement.findOneAndUpdate(
+      await LeavesManagement.updateOne(
         {
           _id: req.params.id,
         },
@@ -543,6 +542,7 @@ class LeaveController {
    */
   async publicHolidayList(req, res) {
     try {
+      let currentYear = moment().year();
       let publicHolidayList = {
         holidayList: [
           {
@@ -590,7 +590,7 @@ class LeaveController {
             holidayDate: "25/12/2022",
           },
         ],
-        year: "2022",
+        year: currentYear,
         isDeleted: false,
       };
       return res.status(200).json({
@@ -599,16 +599,12 @@ class LeaveController {
         message: "",
       });
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 
   async getUpcomingLeaves(req, res) {
     try {
-      console.log("kjvkdsvjk");
-      console.log(req.params);
-      console.log(req.body);
       let condition = {
         isDeleted: {
           $ne: true,
@@ -619,7 +615,7 @@ class LeaveController {
       condition["leaveFrom"] = {
         $gte: getUtcTime(req.body.leaveFrom, timezone, "YYYY/MM/DD HH:mm:ss"),
       };
-      console.log(condition);
+
       let query = [
         {
           $match: condition,
