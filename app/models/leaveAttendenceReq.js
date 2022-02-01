@@ -11,11 +11,7 @@ const leaveAttendenceReqSchema = new Schema(
         },
         reason: {
             type: String,
-
-        },
-        leaveType: {
-            type: String,
-
+            required: true
         },
         startDate: {
             type: Date,
@@ -59,9 +55,8 @@ const leaveAttendenceReqSchema = new Schema(
             type: mongoose.Types.ObjectId,
             ref: "User",
         },
-        isApproved: {
-            type: Boolean,
-            default: false,
+        status: {
+            type: String,
         },
     },
     {

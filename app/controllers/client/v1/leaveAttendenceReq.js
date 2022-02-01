@@ -1,48 +1,53 @@
 
-const { leaveAttendenceReqSchema } = require("../../../models/leaveAttendenceReq")
-const moment = require("moment-timezone");
+const { leaveAttendenceReqSchema } = require("../../../models/leaveAttendenceReq");
 const AttendanceSchema = require("../../../models/attendence");
 const { UserSchema } = require("../../../models/user");
-const { Types } = require("mongoose");
 const { LeavesManagement } = require("../../../models/leave");
+const moment = require("moment-timezone");
+const timezone = "+5:30";
 class leaveAttendenceController {
 
     async index(req, res) {
-        try {
-            let sort_key = req.query.sort_key;
-            let sort_direction = req.query.sort_direction
-                ? req.query.sort_direction === "asc"
-                    ? 1
-                    : -1
-                : 1;
-
-            let criteria = {};
-
-            if (req.query.type) {
-                Object.assign(criteria, { type: req.query.type });
-            }
-
-            const options = {
-                page: req.query.page || 1,
-                limit: req.query.limit || 10,
-                sort: { [sort_key]: sort_direction },
+        let { page, limit, sortField, sortValue, sort_key, sort_direction } = req.query;
+        let sort = {};
+        let criteria = { isDeleted: false };
+        if (sortField) {
+            sort = {
+                [sortField]: sortValue === "AES" ? 1 : -1,
             };
-
-            let data =
-                req.query.page || req.query.limit
-                    ? await leaveAttendenceReqSchema.paginate(criteria, options)
-                    : await leaveAttendenceReqSchema
-                        .find(criteria)
-                        .sort({ [sort_key]: sort_direction }).populate({
-                            path: "userId",
-                            select: ["firstname", "lastname", "email", "profile"],
-                        });
-
-            return res.status(200).json({ success: true, data: data });
-        } catch (error) {
-            return res.status(500).json({ succcess: false, message: error.message });
+        } else {
+            sort = {
+                createdAt: -1,
+            };
         }
+        var populateData = {
+            path: "userId",
+            select: ["email", "firstname", "lastname", "profile"],
+        };
+        const options = {
+            page: req.query.page || 1,
+            limit: req.query.limit || 10,
+            sort: { createdAt: -1 },
+            populate: populateData,
+        };
+
+        let leave =
+            req.query.page || req.query.limit
+                ? await leaveAttendenceReqSchema.paginate(criteria, options)
+                : await leaveAttendenceReqSchema.find({ criteria })
+                    .sort({
+                        createdAt: -1,
+                    })
+                    .populate({
+                        path: "userId",
+                        select: ["firstname", "lastname", "email", "profile"],
+                    });
+
+        return res
+            .status(200)
+            .json({ success: true, data: leave.docs ? leave.docs : leave });
     }
+
     /**
      * Create request entry for leave/attendence
      * @param {*} req 
@@ -65,133 +70,31 @@ class leaveAttendenceController {
             );
             let data = {
                 ...req.body,
+                startDate: moment(req.body.startDate).utc(false),
+                endDate: moment(req.body.endDate).utc(false),
                 requestedTo: userData.teamLeader,
-                userId: req.currentUser._id
+                userId: req.currentUser._id,
+                status: "Pending"
             }
-            if (req.body.requestType == "leave") {
-                data.startDate = moment(req.body.startDate).utc(true);
-                data.endDate = moment(req.body.endDate).utc(true);
-                let start = moment(data.startDate, "YYYY-MM-DD");
-                let end = moment(data.endDate, "YYYY-MM-DD");
-                let leaveFlag = moment().isSameOrBefore(start, "days");
-                //check valid leave apply or not
-                if (leaveFlag) {
-                    let leaveCount;
-                    if (
-                        data.leaveType == "First-Half-Leave" ||
-                        data.leaveType == "Second-Half-Leave"
-                    ) {
-                        leaveCount = 0.5;
-                    }
-                    if (data.leaveType == "FullLeave") {
-                        leaveCount = 1;
-                    }
-                    let leaveDaysCount = workingDaysCount(start, end);
-                    // let publicHolidayList = await holidaySchema.findOne({
-                    //   isDeleted: false,
-                    //   year: "2022",
-                    // });
-                    let publicHolidayList = {
-                        holidayList: [
-                            {
-                                holidayName: "Makar Sankranti",
-                                holidayDate: "14/01/2022",
-                            },
-                            {
-                                holidayName: "Republic Day",
-                                holidayDate: "26/01/2022",
-                            },
-                            {
-                                holidayName: "Holi",
-                                holidayDate: "18/03/2022",
-                            },
-                            {
-                                holidayName: "Ramzan Eid",
-                                holidayDate: "03/05/2022",
-                            },
-                            {
-                                holidayName: "Rakshbandhan",
-                                holidayDate: "11/08/2022",
-                            },
-                            {
-                                holidayName: "Independence Day",
-                                holidayDate: "15/08/2022",
-                            },
-                            {
-                                holidayName: "Janmashtami",
-                                holidayDate: "18/08/2022",
-                            },
-                            {
-                                holidayName: "Diwali",
-                                holidayDate: "24/10/2022",
-                            },
-                            {
-                                holidayName: "New Year",
-                                holidayDate: "25/10/2022",
-                            },
-                            {
-                                holidayName: "Bhai Dooj",
-                                holidayDate: "26/10/2022",
-                            },
-                            {
-                                holidayName: "Christmas",
-                                holidayDate: "25/12/2022",
-                            },
-                        ],
-                        year: "2022",
-                        isDeleted: false,
-                    };
-                    let publicHolidayCount = 0;
-                    publicHolidayList.holidayList.forEach((element) => {
-                        if (!(element.day == "Sunday" || element.day == "Satuerday")) {
-                            let date = moment(element.holidayDate, "DD/MM/YYYY").format(
-                                "YYYY-MM-DD"
-                            );
-                            if (moment(date).isBetween(start, end) || moment(date).isSame(start) || moment(date).isSame(end)) {
-                                publicHolidayCount++;
-                            }
-                        }
-                    });
-                    leaveDaysCount = leaveDaysCount - publicHolidayCount;
-                    if (leaveDaysCount > 0) {
-                        data.totalDay = leaveDaysCount * leaveCount;
-                        //update isPaid flag accroding to leave type
-                        if (
-                            (userData.totalAvailablePaidLeave >= data.totalDay &&
-                                data.type == "PaidLeave") ||
-                            data.type == "UnpaidLeave"
-                        ) {
-                            let reqData = await new leaveAttendenceReqSchema(data);
-                            await reqData.save();
-                            return res.status(200).json({ success: true, message: "Leave Request added successfully" });
-                        } else {
-                            return res
-                                .status(500)
-                                .json({ success: false, data: "Not Available for Paid Leave" });
-                        }
-                    } else {
-                        return res
-                            .status(500)
-                            .json({ success: false, data: "Please Select valid Date" });
-                    }
-                } else {
-                    return res
-                        .status(500)
-                        .json({ success: false, data: "Please Select Valid Date" });
-                }
-
-            } else {
-                let reqData = new leaveAttendenceReqSchema(data);
+            let resData = await processData(req.body, data);
+            if (resData && resData.data && resData.isCreatedFlag && Object.keys(resData.data).length > 0) {
+                let reqData = new leaveAttendenceReqSchema(resData.data);
                 await reqData.save();
-                return res.status(200).json({ success: true, message: "Attendance Request added successfully" });
+                return res.status(200).json({ success: true, message: data.requestType + " Request added successfully" });
+            } else {
+                return res.status(500).json({ success: false, message: resData.message });
             }
         } catch (error) {
-            console.log(error);
             return res.status(500).json({ success: false, message: error.message });
         }
     }
 
-    //Approve Request for leave/attendence by team leader
+    /**
+     * Approve Request for leave/attendence by team leader
+     * @param {*} req 
+     * @param {*} res 
+     * @returns object
+     */
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
@@ -268,7 +171,8 @@ class leaveAttendenceController {
                     }, {
                         // approvedBy: Types.ObjectId(req.currentUser._id),
                         approvedBy: req.currentUser._id,
-                        isApproved: true
+                        status: "Approved",
+                        approveDate: moment()
                     });
                     return res.status(200).json({ success: true, message: "Successfully " + requesTypeData.requestType + "Document Added" });
                 } else {
@@ -277,19 +181,17 @@ class leaveAttendenceController {
             } else {
                 return res.status(500).json({ success: false, message: "Error while update document" });
             }
-
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
         }
     }
-
 
     async getAllRequestById(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.find({
                 requestedTo: req.currentUser._id,
                 isDeleted: false,
-                isApproved: false
+                status: "Pending"
             }).populate({
                 path: "userId",
                 select: ["firstname", "lastname", "email", "profile"],
@@ -299,7 +201,6 @@ class leaveAttendenceController {
             return res.status(500).json({ success: false, message: error.message });
         }
     }
-
 
     /**
      * Delete Request enry by user id
@@ -311,14 +212,55 @@ class leaveAttendenceController {
         try {
             await leaveAttendenceReqSchema.updateOne({
                 _id: req.params.id,
-                isApproved: false
             }, {
                 isDeleted: true
             });
-
             return res.status(200).json({ success: true, message: "Successfully deleted requestedEntry" });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    async rejectRequest(req, res) {
+        try {
+            await leaveAttendenceReqSchema.findOne({
+                _id: req.params.id,
+                isDeleted: false
+            }, {
+                status: "Rejected",
+                rejectedBy: req.currentUser._id,
+                rejectDate: moment()
+            });
+            return res.status(200).json({ success: true, message: "Successfully Rejected requestedEntry" });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    async update(req, res) {
+        try {
+            let data = {
+                ...req.body,
+                startDate: moment(req.body.startDate).utc(false),
+                endDate: moment(req.body.endDate).utc(false)
+            }
+            let resData = await processData(req.body, data);
+            if (resData && resData.data && resData.isCreatedFlag && Object.keys(resData.data).length > 0) {
+                await leaveAttendenceReqSchema.updateOne(
+                    {
+                        _id: req.params.id,
+                    },
+                    resData.data
+                );
+                return res.status(200).json({ success: true, data: {}, message: data.requestType + " Request updated successfully" });
+            } else {
+                return res.status(500).json({ success: false, message: resData.message });
+            }
+        } catch (error) {
+            return res
+                .status(500)
+                .json({ success: false, message: error.message });
+
         }
     }
 };
@@ -333,6 +275,169 @@ const workingDaysCount = (start, end) => {
     if (end.day() == 6) --wlast; // -1 if end with saturday
     return wfirst + Math.floor(days) + wlast; // get the total
 };
+
+/**
+ * Function is used for get utc time
+ * @param {*} input_time
+ * @param {*} utc_offset
+ * @param {*} input_format
+ * @param {*} output_format
+ */
+const getUtcTime = (
+    input_time,
+    utc_offset,
+    input_format,
+    output_format = true
+) => {
+    let dateObject = moment(input_time, input_format);
+    if (output_format == true) {
+        return dateObject
+            .add(convertUtcOffsetToMinute(utc_offset), "minute")
+            .toDate();
+    } else {
+        return dateObject
+            .add(convertUtcOffsetToMinute(utc_offset), "minute")
+            .format(output_format);
+    }
+};
+
+/**
+ * This function is used for convert timezone into minutes
+ * @param {*} tz
+ */
+const convertUtcOffsetToMinute = (tz) => {
+    let offset = tz.split(":");
+    offset[0] = parseInt(offset[0]);
+    offset[1] = parseInt(offset[1]);
+    let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
+    if (offset[0] < 0) {
+        tz_minute = tz_minute * -1;
+    }
+    return tz_minute * -1;
+};
+
+const processData = (reqData, data) => {
+    return new Promise((resolve, reject) => {
+        let start = moment(reqData.startDate, "YYYY-MM-DD").utc(false);
+        let currentDate = moment().format("YYYY-MM-DD");
+        let leaveFlag = moment(currentDate).isAfter(start, "days");
+        let leaveDaysCount = workingDaysCount(data.startDate, data.endDate);
+        let publicHolidayList = {
+            holidayList: [
+                {
+                    holidayName: "Makar Sankranti",
+                    holidayDate: "14/01/2022",
+                },
+                {
+                    holidayName: "Republic Day",
+                    holidayDate: "26/01/2022",
+                },
+                {
+                    holidayName: "Holi",
+                    holidayDate: "18/03/2022",
+                },
+                {
+                    holidayName: "Ramzan Eid",
+                    holidayDate: "03/05/2022",
+                },
+                {
+                    holidayName: "Rakshbandhan",
+                    holidayDate: "11/08/2022",
+                },
+                {
+                    holidayName: "Independence Day",
+                    holidayDate: "15/08/2022",
+                },
+                {
+                    holidayName: "Janmashtami",
+                    holidayDate: "18/08/2022",
+                },
+                {
+                    holidayName: "Diwali",
+                    holidayDate: "24/10/2022",
+                },
+                {
+                    holidayName: "New Year",
+                    holidayDate: "25/10/2022",
+                },
+                {
+                    holidayName: "Bhai Dooj",
+                    holidayDate: "26/10/2022",
+                },
+                {
+                    holidayName: "Christmas",
+                    holidayDate: "25/12/2022",
+                },
+            ],
+            year: "2022",
+            isDeleted: false,
+        };
+        let publicHolidayCount = 0;
+        publicHolidayList.holidayList.forEach((element) => {
+            if (!(element.day == "Sunday" || element.day == "Satuerday")) {
+                let date = moment(element.holidayDate, "DD/MM/YYYY").format(
+                    "YYYY-MM-DD"
+                );
+                if (moment(date).isBetween(data.startDate, data.endDate) || moment(date).isSame(data.startDate) || moment(date).isSame(data.endDate)) {
+                    publicHolidayCount++;
+                }
+            }
+        });
+        leaveDaysCount = leaveDaysCount - publicHolidayCount;
+        //check valid leave apply or not
+        if (leaveFlag && leaveDaysCount > 0) {
+            if (reqData.requestType == "leave") {
+                let leaveCount;
+                if (
+                    data.leaveType == "First-Half-Leave" ||
+                    data.leaveType == "Second-Half-Leave"
+                ) {
+                    leaveCount = 0.5;
+                }
+                if (data.leaveType == "FullLeave") {
+                    leaveCount = 1;
+                }
+                data.totalDay = leaveDaysCount * leaveCount;
+                //update isPaid flag accroding to leave type
+                if (
+                    (userData.totalAvailablePaidLeave >= data.totalDay &&
+                        data.type == "PaidLeave") ||
+                    data.type == "UnpaidLeave"
+                ) {
+                    resolve({
+                        isCreatedFlag: true,
+                        data: data
+                    });
+                } else {
+                    resolve({
+                        isCreatedFlag: false,
+                        data: {},
+                        message: "Not Available for Paid Leave"
+                    });
+                }
+            } else if (reqData.requestType == "attendance") {
+                if (moment(data.startDate).isSame(data.endDate)) {
+                    resolve({
+                        isCreatedFlag: true,
+                        data: data
+                    });
+                } else {
+                    resolve({
+                        isCreatedFlag: false,
+                        data: {},
+                        message: "Please Select valid date for attendence request"
+                    });
+                }
+            }
+        } else {
+            resolve({
+                isCreatedFlag: false,
+                data: {},
+                message: "Please Select valid date"
+            });
+        }
+    })
+}
 
 
 module.exports = new leaveAttendenceController();

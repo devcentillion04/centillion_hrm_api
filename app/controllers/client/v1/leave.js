@@ -1,6 +1,7 @@
 const { LeavesManagement } = require("../../../models/leave");
 const { UserSchema } = require("../../../models/user");
-const holidaySchema = require("../../../models/publicHoliday");
+const Attendance = require("../../../models/attendence");
+const { holidaySchema } = require("../../../models/publicHoliday");
 const moment = require("moment-timezone");
 const timezone = "+5:30";
 
@@ -15,7 +16,7 @@ class LeaveController {
       };
     } else {
       sort = {
-        name: 1,
+        createdAt: -1,
       };
     }
     var populateData = {
@@ -25,7 +26,7 @@ class LeaveController {
     const options = {
       page: req.query.page || 1,
       limit: req.query.limit || 10,
-      sort: { [sort_key]: sort_direction },
+      sort: { createdAt: -1 },
       populate: populateData,
     };
 
@@ -34,7 +35,7 @@ class LeaveController {
         ? await LeavesManagement.paginate(criteria, options)
         : await LeavesManagement.find({ criteria })
           .sort({
-            [sort_key]: sort_direction,
+            createdAt: -1,
           })
           .populate({
             path: "userId",
@@ -333,7 +334,7 @@ class LeaveController {
       let whereClause = { isDeleted: false };
       if (sortField) {
         sort = {
-          [sortField]: sortValue === "ASC" ? 1 : -1,
+          [sortField]: sortValue === "ASC" ? -1 : 1,
         };
       } else {
         sort = {
@@ -526,8 +527,7 @@ class LeaveController {
 
       return res.status(200).json({
         success: true,
-        data: leaveData,
-        message: "",
+        data: leaveData
       });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -627,6 +627,81 @@ class LeaveController {
         success: true,
         data: data,
         message: "",
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * Get upcoming holidayList
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
+  async overviewDetails(req, res) {
+    try {
+      let date = moment();
+      let currentYear = moment().format("YYYY")
+      let query = [
+        {
+          $match: {
+            isDeleted: false,
+            year: currentYear,
+            holidayList: {
+              $elemMatch: {
+                holidayDate:
+                {
+                  $gte: getUtcTime(date, timezone, "YYYY/MM/DD HH:mm:ss"),
+                }
+              }
+            }
+          }
+        },
+        { $unwind: "$holidayList" },
+        {
+          $match: {
+            "holidayList.holidayDate": {
+              $gte: getUtcTime(date, timezone, "YYYY/MM/DD HH:mm:ss"),
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$_id", holidayList: { $push: "$holidayList" }, year: {
+              $first: '$year'
+            }
+          }
+        },
+        { $project: { holidayList: 1, year: 1 } }
+      ];
+      let holidayList = await holidaySchema.aggregate(query);
+      let pendingLeaveList = await LeavesManagement.find({
+        userId: req.currentUser._id,
+        status: "pending"
+      }, {
+        _id: 1
+      });
+      let startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
+      let endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
+      let condition = {
+        clockOut: {
+          $gte: getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
+          $lte: getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
+        }
+      }
+      let currentMonthAttendance = await Attendance.find({
+        condition
+      })
+      let resData = {
+        upComingHolidayList: holidayList,
+        pendingLeaveListCount: pendingLeaveList.length,
+        totalAttendance: currentMonthAttendance
+      }
+      return res.status(200).json({
+        success: true,
+        data: resData,
+        message: "Successfully get all upcoming holiday list",
       });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
