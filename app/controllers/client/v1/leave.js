@@ -681,6 +681,12 @@ class LeaveController {
       }, {
         _id: 1
       });
+      let absentLeaveList = await LeavesManagement.find({
+        userId: req.currentUser._id,
+        status: "approved"
+      }, {
+        _id: 1
+      });
       let startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
       let endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
       let condition = {
@@ -696,6 +702,7 @@ class LeaveController {
       let resData = {
         upComingHolidayList: holidayList,
         pendingLeaveListCount: pendingLeaveList.length,
+        absentLeaveListCount: absentLeaveList.length,
         totalAttendance: currentMonthAttendance.length
       }
       return res.status(200).json({
