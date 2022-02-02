@@ -98,7 +98,7 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
-                _id: req.params._id
+                _id: req.params.id
             }).populate({
                 path: "userId",
                 select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
@@ -182,6 +182,7 @@ class leaveAttendenceController {
                 return res.status(500).json({ success: false, message: "Error while update document" });
             }
         } catch (error) {
+            console.log(error);
             return res.status(500).json({ success: false, message: error.message });
         }
     }
