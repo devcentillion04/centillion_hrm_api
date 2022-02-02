@@ -4,7 +4,7 @@ const router = express.Router();
 const auth = require("../../middleware/authorization");
 
 
-router.get("/:id", LeaveController.index);
+router.get("/:id", [auth], LeaveController.index);
 router.post("/applyleave/:id", [auth], LeaveController.applyLeave);
 router.put("/update/:id", LeaveController.update); //update leave data
 router.put("/cancelleave/:id", LeaveController.cancelLeave); //cancel leave
