@@ -547,47 +547,47 @@ class LeaveController {
         holidayList: [
           {
             holidayName: "Makar Sankranti",
-            holidayDate: "14/01/2022",
+            holidayDate: "01/14/2022",
           },
           {
             holidayName: "Republic Day",
-            holidayDate: "26/01/2022",
+            holidayDate: "01/26/2022",
           },
           {
             holidayName: "Holi",
-            holidayDate: "18/03/2022",
+            holidayDate: "03/18/2022",
           },
           {
             holidayName: "Ramzan Eid",
-            holidayDate: "03/05/2022",
+            holidayDate: "05/03/2022",
           },
           {
             holidayName: "Rakshbandhan",
-            holidayDate: "11/08/2022",
+            holidayDate: "08/11/2022",
           },
           {
             holidayName: "Independence Day",
-            holidayDate: "15/08/2022",
+            holidayDate: "08/15/2022",
           },
           {
             holidayName: "Janmashtami",
-            holidayDate: "18/08/2022",
+            holidayDate: "08/18/2022",
           },
           {
             holidayName: "Diwali",
-            holidayDate: "24/10/2022",
+            holidayDate: "10/24/2022",
           },
           {
             holidayName: "New Year",
-            holidayDate: "25/10/2022",
+            holidayDate: "10/25/2022",
           },
           {
             holidayName: "Bhai Dooj",
-            holidayDate: "26/10/2022",
+            holidayDate: "10/26/2022",
           },
           {
             holidayName: "Christmas",
-            holidayDate: "25/12/2022",
+            holidayDate: "12/25/2022",
           },
         ],
         year: currentYear,
