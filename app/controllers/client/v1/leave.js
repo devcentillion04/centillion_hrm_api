@@ -95,56 +95,57 @@ class LeaveController {
           holidayList: [
             {
               holidayName: "Makar Sankranti",
-              holidayDate: "14/01/2022",
+              holidayDate: "2022/01/14",
             },
             {
               holidayName: "Republic Day",
-              holidayDate: "26/01/2022",
+              holidayDate: "2022/01/26",
             },
             {
               holidayName: "Holi",
-              holidayDate: "18/03/2022",
+              holidayDate: "2022/03/18",
             },
             {
               holidayName: "Ramzan Eid",
-              holidayDate: "03/05/2022",
+              holidayDate: "2022/05/03",
             },
             {
               holidayName: "Rakshbandhan",
-              holidayDate: "11/08/2022",
+              holidayDate: "2022/08/11",
             },
             {
               holidayName: "Independence Day",
-              holidayDate: "15/08/2022",
+              holidayDate: "2022/08/15",
             },
             {
               holidayName: "Janmashtami",
-              holidayDate: "18/08/2022",
+              holidayDate: "2022/08/18",
             },
             {
               holidayName: "Diwali",
-              holidayDate: "24/10/2022",
+              holidayDate: "2022/10/24",
             },
             {
               holidayName: "New Year",
-              holidayDate: "25/10/2022",
+              holidayDate: "2022/10/25",
             },
             {
               holidayName: "Bhai Dooj",
-              holidayDate: "26/10/2022",
+              holidayDate: "2022/10/26",
             },
             {
               holidayName: "Christmas",
-              holidayDate: "25/12/2022",
+              holidayDate: "2022/12/25",
             },
           ],
-          year: "2022",
-          isDeleted: false,
-        };
+          year: "2022"
+        }
+        // let holi = await holidaySchema.create(data);
+        // console.log(holi);
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
-            let date = moment(element.holidayDate, "DD/MM/YYYY").format(
+            let date = moment(element.holidayDate, "YYYYY-MM-DD").format(
               "YYYY-MM-DD"
             );
             if (moment(date).isBetween(start, end)) {
@@ -228,56 +229,55 @@ class LeaveController {
           holidayList: [
             {
               holidayName: "Makar Sankranti",
-              holidayDate: "14/01/2022",
+              holidayDate: "2022/01/14",
             },
             {
               holidayName: "Republic Day",
-              holidayDate: "26/01/2022",
+              holidayDate: "2022/01/26",
             },
             {
               holidayName: "Holi",
-              holidayDate: "18/03/2022",
+              holidayDate: "2022/03/18",
             },
             {
               holidayName: "Ramzan Eid",
-              holidayDate: "03/05/2022",
+              holidayDate: "2022/05/03",
             },
             {
               holidayName: "Rakshbandhan",
-              holidayDate: "11/08/2022",
+              holidayDate: "2022/08/11",
             },
             {
               holidayName: "Independence Day",
-              holidayDate: "15/08/2022",
+              holidayDate: "2022/08/15",
             },
             {
               holidayName: "Janmashtami",
-              holidayDate: "18/08/2022",
+              holidayDate: "2022/08/18",
             },
             {
               holidayName: "Diwali",
-              holidayDate: "24/10/2022",
+              holidayDate: "2022/10/24",
             },
             {
               holidayName: "New Year",
-              holidayDate: "25/10/2022",
+              holidayDate: "2022/10/25",
             },
             {
               holidayName: "Bhai Dooj",
-              holidayDate: "26/10/2022",
+              holidayDate: "2022/10/26",
             },
             {
               holidayName: "Christmas",
-              holidayDate: "25/12/2022",
+              holidayDate: "2022/12/25",
             },
           ],
-          year: "2022",
-          isDeleted: false,
-        };
+          year: "2022"
+        }
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
-            let date = moment(element.holidayDate, "DD/MM/YYYY").format(
+            let date = moment(element.holidayDate, "YYYY-MM-DD").format(
               "YYYY-MM-DD"
             );
             if (moment(date).isBetween(start, end)) {
@@ -547,52 +547,51 @@ class LeaveController {
         holidayList: [
           {
             holidayName: "Makar Sankranti",
-            holidayDate: "14/01/2022",
+            holidayDate: "2022/01/14",
           },
           {
             holidayName: "Republic Day",
-            holidayDate: "26/01/2022",
+            holidayDate: "2022/01/26",
           },
           {
             holidayName: "Holi",
-            holidayDate: "18/03/2022",
+            holidayDate: "2022/03/18",
           },
           {
             holidayName: "Ramzan Eid",
-            holidayDate: "03/05/2022",
+            holidayDate: "2022/05/03",
           },
           {
             holidayName: "Rakshbandhan",
-            holidayDate: "11/08/2022",
+            holidayDate: "2022/08/11",
           },
           {
             holidayName: "Independence Day",
-            holidayDate: "15/08/2022",
+            holidayDate: "2022/08/15",
           },
           {
             holidayName: "Janmashtami",
-            holidayDate: "18/08/2022",
+            holidayDate: "2022/08/18",
           },
           {
             holidayName: "Diwali",
-            holidayDate: "24/10/2022",
+            holidayDate: "2022/10/24",
           },
           {
             holidayName: "New Year",
-            holidayDate: "25/10/2022",
+            holidayDate: "2022/10/25",
           },
           {
             holidayName: "Bhai Dooj",
-            holidayDate: "26/10/2022",
+            holidayDate: "2022/10/26",
           },
           {
             holidayName: "Christmas",
-            holidayDate: "25/12/2022",
+            holidayDate: "2022/12/25",
           },
         ],
-        year: currentYear,
-        isDeleted: false,
-      };
+        year: "2022"
+      }
       return res.status(200).json({
         success: true,
         data: publicHolidayList,

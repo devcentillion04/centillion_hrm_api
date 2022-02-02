@@ -76,7 +76,7 @@ class leaveAttendenceController {
                 userId: req.currentUser._id,
                 status: "Pending"
             }
-            let resData = await processData(req.body, data);
+            let resData = await processData(req.body, data, userData);
             if (resData && resData.data && resData.isCreatedFlag && Object.keys(resData.data).length > 0) {
                 let reqData = new leaveAttendenceReqSchema(resData.data);
                 await reqData.save();
@@ -98,7 +98,7 @@ class leaveAttendenceController {
     async approve(req, res) {
         try {
             let requestedData = await leaveAttendenceReqSchema.findOne({
-                _id: req.currentUser._id
+                _id: req.params.id
             }).populate({
                 path: "userId",
                 select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
@@ -108,9 +108,9 @@ class leaveAttendenceController {
                 if (requestedData.requestType == "attendance") {
                     let attendenceData = {
                         userId: requestedData.userId,
-                        clockIn: moment(requestedData.clockIn).utc(true),
-                        workDate: moment(requestedData.clockIn).startOf("day").utc(true).toISOString(),
-                        clockOut: moment(requestedData.clockOut).utc(true),
+                        clockIn: moment(requestedData.startDate).utc(false),
+                        workDate: moment(requestedData.startDate).startOf("day").utc(true).toISOString(),
+                        clockOut: moment(requestedData.endDate).utc(false),
                         workingHours: requestedData.totalHours
                     }
                     let data = await new AttendanceSchema({
@@ -123,7 +123,7 @@ class leaveAttendenceController {
                     let data = {
                         reason: requestedData.reason,
                         leaveType: requestedData.leaveType,
-                        approvedBy: req.body.approvedBy,
+                        approvedBy: req.currentUser._id,
                         isApproved: true,
                         status: "approved",
                         approveDate: moment(),
@@ -150,7 +150,7 @@ class leaveAttendenceController {
 
                     let leaveData = await new LeavesManagement({
                         ...data,
-                        userId: req.body.approvedBy,
+                        userId: req.currentUser._id,
                     });
 
                     await leaveData.save(); //create leave document
@@ -239,12 +239,23 @@ class leaveAttendenceController {
 
     async update(req, res) {
         try {
+            let userData = await UserSchema.findOne(
+                {
+                    _id: req.currentUser._id,
+                    isDeleted: false
+                },
+                {
+                    totalAvailablePaidLeave: 1,
+                    totalUnpaidLeave: 1,
+                    teamLeader: 1
+                }
+            );
             let data = {
                 ...req.body,
                 startDate: moment(req.body.startDate).utc(false),
                 endDate: moment(req.body.endDate).utc(false)
             }
-            let resData = await processData(req.body, data);
+            let resData = await processData(req.body, data, userData);
             if (resData && resData.data && resData.isCreatedFlag && Object.keys(resData.data).length > 0) {
                 await leaveAttendenceReqSchema.updateOne(
                     {
@@ -316,7 +327,7 @@ const convertUtcOffsetToMinute = (tz) => {
     return tz_minute * -1;
 };
 
-const processData = (reqData, data) => {
+const processData = (reqData, data, userData) => {
     return new Promise((resolve, reject) => {
         let start = moment(reqData.startDate, "YYYY-MM-DD").utc(false);
         let currentDate = moment().format("YYYY-MM-DD");
@@ -326,56 +337,55 @@ const processData = (reqData, data) => {
             holidayList: [
                 {
                     holidayName: "Makar Sankranti",
-                    holidayDate: "14/01/2022",
+                    holidayDate: "2022/01/14",
                 },
                 {
                     holidayName: "Republic Day",
-                    holidayDate: "26/01/2022",
+                    holidayDate: "2022/01/26",
                 },
                 {
                     holidayName: "Holi",
-                    holidayDate: "18/03/2022",
+                    holidayDate: "2022/03/18",
                 },
                 {
                     holidayName: "Ramzan Eid",
-                    holidayDate: "03/05/2022",
+                    holidayDate: "2022/05/03",
                 },
                 {
                     holidayName: "Rakshbandhan",
-                    holidayDate: "11/08/2022",
+                    holidayDate: "2022/08/11",
                 },
                 {
                     holidayName: "Independence Day",
-                    holidayDate: "15/08/2022",
+                    holidayDate: "2022/08/15",
                 },
                 {
                     holidayName: "Janmashtami",
-                    holidayDate: "18/08/2022",
+                    holidayDate: "2022/08/18",
                 },
                 {
                     holidayName: "Diwali",
-                    holidayDate: "24/10/2022",
+                    holidayDate: "2022/10/24",
                 },
                 {
                     holidayName: "New Year",
-                    holidayDate: "25/10/2022",
+                    holidayDate: "2022/10/25",
                 },
                 {
                     holidayName: "Bhai Dooj",
-                    holidayDate: "26/10/2022",
+                    holidayDate: "2022/10/26",
                 },
                 {
                     holidayName: "Christmas",
-                    holidayDate: "25/12/2022",
+                    holidayDate: "2022/12/25",
                 },
             ],
-            year: "2022",
-            isDeleted: false,
-        };
+            year: "2022"
+        }
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
             if (!(element.day == "Sunday" || element.day == "Satuerday")) {
-                let date = moment(element.holidayDate, "DD/MM/YYYY").format(
+                let date = moment(element.holidayDate, "YYYY-MM-DD").format(
                     "YYYY-MM-DD"
                 );
                 if (moment(date).isBetween(data.startDate, data.endDate) || moment(date).isSame(data.startDate) || moment(date).isSame(data.endDate)) {
