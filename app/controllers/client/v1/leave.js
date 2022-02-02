@@ -7,6 +7,16 @@ const timezone = "+5:30";
 
 class LeaveController {
   async index(req, res) {
+    let currentUser = await UserSchema.findOne({
+      _id: req.currentUser._id,
+      isDeleted: false
+    }, {
+      role: 1,
+      _id: 1
+    }).populate({
+      path: "role",
+      select: ["name"],
+    });
     let { page, limit, sortField, sortValue, sort_key, sort_direction } = req.query;
     let sort = {};
     let criteria = { isDeleted: false };
@@ -18,6 +28,9 @@ class LeaveController {
       sort = {
         createdAt: -1,
       };
+    }
+    if (currentUser.role.name == "USER") {
+      criteria.userId = req.currentUser._id;
     }
     var populateData = {
       path: "userId",
@@ -87,61 +100,11 @@ class LeaveController {
           leaveCount = 1;
         }
         let leaveDaysCount = workingDaysCount(start, end);
-        // let publicHolidayList = await holidaySchema.findOne({
-        //   isDeleted: false,
-        //   year: "2022",
-        // });
-        let publicHolidayList = {
-          holidayList: [
-            {
-              holidayName: "Makar Sankranti",
-              holidayDate: "2022/01/14",
-            },
-            {
-              holidayName: "Republic Day",
-              holidayDate: "2022/01/26",
-            },
-            {
-              holidayName: "Holi",
-              holidayDate: "2022/03/18",
-            },
-            {
-              holidayName: "Ramzan Eid",
-              holidayDate: "2022/05/03",
-            },
-            {
-              holidayName: "Rakshbandhan",
-              holidayDate: "2022/08/11",
-            },
-            {
-              holidayName: "Independence Day",
-              holidayDate: "2022/08/15",
-            },
-            {
-              holidayName: "Janmashtami",
-              holidayDate: "2022/08/18",
-            },
-            {
-              holidayName: "Diwali",
-              holidayDate: "2022/10/24",
-            },
-            {
-              holidayName: "New Year",
-              holidayDate: "2022/10/25",
-            },
-            {
-              holidayName: "Bhai Dooj",
-              holidayDate: "2022/10/26",
-            },
-            {
-              holidayName: "Christmas",
-              holidayDate: "2022/12/25",
-            },
-          ],
-          year: "2022"
-        }
-        // let holi = await holidaySchema.create(data);
-        // console.log(holi);
+        let year = moment().format("YYYY")
+        let publicHolidayList = await holidaySchema.findOne({
+          isDeleted: false,
+          year: year,
+        });
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
@@ -221,59 +184,11 @@ class LeaveController {
         }
         let leaveDaysCount = workingDaysCount(start, end);
         let currentYear = moment().format("YYYY");
-        // let publicHolidayList = await holidaySchema.findOne({
-        //   isDeleted: false,
-        //   year: currentYear,
-        // });
-        let publicHolidayList = {
-          holidayList: [
-            {
-              holidayName: "Makar Sankranti",
-              holidayDate: "2022/01/14",
-            },
-            {
-              holidayName: "Republic Day",
-              holidayDate: "2022/01/26",
-            },
-            {
-              holidayName: "Holi",
-              holidayDate: "2022/03/18",
-            },
-            {
-              holidayName: "Ramzan Eid",
-              holidayDate: "2022/05/03",
-            },
-            {
-              holidayName: "Rakshbandhan",
-              holidayDate: "2022/08/11",
-            },
-            {
-              holidayName: "Independence Day",
-              holidayDate: "2022/08/15",
-            },
-            {
-              holidayName: "Janmashtami",
-              holidayDate: "2022/08/18",
-            },
-            {
-              holidayName: "Diwali",
-              holidayDate: "2022/10/24",
-            },
-            {
-              holidayName: "New Year",
-              holidayDate: "2022/10/25",
-            },
-            {
-              holidayName: "Bhai Dooj",
-              holidayDate: "2022/10/26",
-            },
-            {
-              holidayName: "Christmas",
-              holidayDate: "2022/12/25",
-            },
-          ],
-          year: "2022"
-        }
+        let publicHolidayList = await holidaySchema.findOne({
+          isDeleted: false,
+          year: currentYear,
+        });
+
         let publicHolidayCount = 0;
         publicHolidayList.holidayList.forEach((element) => {
           if (!(element.day == "Sunday" || element.day == "Satuerday")) {
@@ -542,56 +457,11 @@ class LeaveController {
    */
   async publicHolidayList(req, res) {
     try {
-      let currentYear = moment().year();
-      let publicHolidayList = {
-        holidayList: [
-          {
-            holidayName: "Makar Sankranti",
-            holidayDate: "2022/01/14",
-          },
-          {
-            holidayName: "Republic Day",
-            holidayDate: "2022/01/26",
-          },
-          {
-            holidayName: "Holi",
-            holidayDate: "2022/03/18",
-          },
-          {
-            holidayName: "Ramzan Eid",
-            holidayDate: "2022/05/03",
-          },
-          {
-            holidayName: "Rakshbandhan",
-            holidayDate: "2022/08/11",
-          },
-          {
-            holidayName: "Independence Day",
-            holidayDate: "2022/08/15",
-          },
-          {
-            holidayName: "Janmashtami",
-            holidayDate: "2022/08/18",
-          },
-          {
-            holidayName: "Diwali",
-            holidayDate: "2022/10/24",
-          },
-          {
-            holidayName: "New Year",
-            holidayDate: "2022/10/25",
-          },
-          {
-            holidayName: "Bhai Dooj",
-            holidayDate: "2022/10/26",
-          },
-          {
-            holidayName: "Christmas",
-            holidayDate: "2022/12/25",
-          },
-        ],
-        year: "2022"
-      }
+      let currentYear = moment().format("YYYY");
+      let publicHolidayList = await holidaySchema.findOne({
+        isDeleted: false,
+        year: currentYear,
+      });
       return res.status(200).json({
         success: true,
         data: publicHolidayList,
