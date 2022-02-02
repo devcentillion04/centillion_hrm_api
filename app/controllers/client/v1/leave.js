@@ -687,15 +687,16 @@ class LeaveController {
         clockOut: {
           $gte: getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
           $lte: getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
-        }
+        },
+        userId: req.currentUser._id
       }
-      let currentMonthAttendance = await Attendance.find({
-        condition
-      })
+      let currentMonthAttendance = await Attendance.find(condition, {
+        clockIn: 1
+      });
       let resData = {
         upComingHolidayList: holidayList,
         pendingLeaveListCount: pendingLeaveList.length,
-        totalAttendance: currentMonthAttendance
+        totalAttendance: currentMonthAttendance.length
       }
       return res.status(200).json({
         success: true,
