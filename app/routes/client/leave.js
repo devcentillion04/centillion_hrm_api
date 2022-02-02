@@ -11,7 +11,7 @@ router.put("/cancelleave/:id", LeaveController.cancelLeave); //cancel leave
 router.put("/approveleave/:id", LeaveController.approveLeave); //approve leave
 router.put("/rejectleave/:id", LeaveController.rejectLeave); //reject leave
 router.get("/getleavedata/:id", LeaveController.getLeaveData); //get leave data
-router.get("/publicholidaylist", LeaveController.publicHolidayList); //get all public holiday list
+router.get("/test/publicholidaylist", LeaveController.publicHolidayList); //get all public holiday list
 router.post("/getupcomingleaves/:userId", LeaveController.getUpcomingLeaves);
 router.post("/overviewDetails", [auth], LeaveController.overviewDetails); //get leave data
 module.exports = router;

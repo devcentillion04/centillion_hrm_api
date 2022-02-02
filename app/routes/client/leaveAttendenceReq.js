@@ -8,7 +8,7 @@ router.get("/:id", leaveAttendenceReqController.index);
 router.post("/create", auth, leaveAttendenceReqController.create);
 router.put("/update/:id", leaveAttendenceReqController.update);
 router.put("/approve/:id", auth, leaveAttendenceReqController.approve);
-router.get("/getallrequestbyid", auth, leaveAttendenceReqController.getAllRequestById);
+router.get("/test/getallrequestbyid", auth, leaveAttendenceReqController.getAllRequestById);
 router.put("/delete/:id", leaveAttendenceReqController.delete);
 router.put("/rejectRequest/:id", leaveAttendenceReqController.rejectRequest);
 module.exports = router;
