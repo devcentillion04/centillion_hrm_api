@@ -150,7 +150,6 @@ class leaveAttendenceController {
 
                     let leaveData = await new LeavesManagement({
                         ...data,
-                        userId: req.currentUser._id,
                     });
 
                     await leaveData.save(); //create leave document

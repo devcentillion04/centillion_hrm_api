@@ -151,6 +151,9 @@ class UserController {
         isDeleted: 1,
         profile: 1,
         employeeType: 1,
+        designation: 1,
+        mobileno: 1,
+        joiningDate: 1
       });
 
       let peers = await UserSchema.find({
@@ -163,6 +166,9 @@ class UserController {
         isDeleted: 1,
         profile: 1,
         employeeType: 1,
+        designation: 1,
+        mobileno: 1,
+        joiningDate: 1
       });
 
       let data = {

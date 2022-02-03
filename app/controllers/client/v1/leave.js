@@ -3,7 +3,8 @@ const { UserSchema } = require("../../../models/user");
 const Attendance = require("../../../models/attendence");
 const { holidaySchema } = require("../../../models/publicHoliday");
 const moment = require("moment-timezone");
-const timezone = "+5:30";
+const commonFunction = require("../../../common/function");
+let leavesLogs = commonFunction.fileLogs("leaves");
 
 class LeaveController {
   async index(req, res) {
@@ -74,6 +75,7 @@ class LeaveController {
         leaveTo: moment(req.body.leaveTo).utc(true),
         status: "pending",
       };
+      leavesLogs.info("applyLeave api request data " + JSON.stringify(data));
       //find user data
       let userData = await UserSchema.findOne(
         {
@@ -99,7 +101,7 @@ class LeaveController {
         if (data.leaveType == "FullLeave") {
           leaveCount = 1;
         }
-        let leaveDaysCount = workingDaysCount(start, end);
+        let leaveDaysCount = commonFunction.workingDaysCount(start, end);
         let year = moment().format("YYYY")
         let publicHolidayList = await holidaySchema.findOne({
           isDeleted: false,
@@ -138,18 +140,22 @@ class LeaveController {
           });
 
           await leaveData.save(); //create leave document
+          leavesLogs.info("Leave data created successfully for userId :-" + req.currentUser._id + "Leave DocumentId :-" + leaveData._id)
           return res.status(200).json({ success: true, data: leaveData });
         } else {
+          leavesLogs.info("Not Available for Paid Leave");
           return res
             .status(200)
             .json({ success: false, data: "Not Available for Paid Leave" });
         }
       } else {
+        leavesLogs.info("Please Select Valid Date");
         return res
           .status(500)
           .json({ success: false, data: "Please Select Valid Date" });
       }
     } catch (error) {
+      leavesLogs.error("Error while create leave doc" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -167,6 +173,7 @@ class LeaveController {
         leaveFrom: moment(req.body.leaveFrom).utc(true),
         leaveTo: moment(req.body.leaveTo).utc(true),
       };
+      leavesLogs.info("Update api request data " + JSON.stringify(data));
       let start = moment(data.leaveFrom, "YYYY-MM-DD");
       let end = moment(data.leaveTo, "YYYY-MM-DD");
       let leaveFlag = moment().isSameOrBefore(start, "days");
@@ -182,7 +189,7 @@ class LeaveController {
         if (data.leaveType == "FullLeave") {
           leaveCount = 1;
         }
-        let leaveDaysCount = workingDaysCount(start, end);
+        let leaveDaysCount = commonFunction.workingDaysCount(start, end);
         let currentYear = moment().format("YYYY");
         let publicHolidayList = await holidaySchema.findOne({
           isDeleted: false,
@@ -216,62 +223,65 @@ class LeaveController {
           },
           data
         );
+        leavesLogs.info("Successfully leave data updated for leave docId:- " + req.params.id);
         return res
           .status(200)
           .json({ success: true, data: data, message: "Successfully leave Data Updated" });
       } else {
+        leavesLogs.info("Please Select Valid Date");
         return res
           .status(500)
           .json({ success: false, data: "Please Select Valid Date" });
       }
     } catch (error) {
+      leavesLogs.error("Error while create leave doc" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 
-  /**
-   * FOr List leave data by UserId
-   * @param {*} req
-   * @param {*} res
-   * @returns
-   */
-  async show(req, res) {
-    try {
-      let { id } = req.params;
-      let user = {};
-      if (id) {
-        user = { ...req.params._id, userId: id };
-      } else {
-        user = { ...req.params._id };
-      }
-      let { page, limit, sortField, sortValue } = req.query;
-      let sort = {};
-      let whereClause = { isDeleted: false };
-      if (sortField) {
-        sort = {
-          [sortField]: sortValue === "ASC" ? -1 : 1,
-        };
-      } else {
-        sort = {
-          name: 1,
-        };
-      }
+  // /**
+  //  * FOr List leave data by UserId
+  //  * @param {*} req
+  //  * @param {*} res
+  //  * @returns
+  //  */
+  // async show(req, res) {
+  //   try {
+  //     let { id } = req.params;
+  //     let user = {};
+  //     if (id) {
+  //       user = { ...req.params._id, userId: id };
+  //     } else {
+  //       user = { ...req.params._id };
+  //     }
+  //     let { page, limit, sortField, sortValue } = req.query;
+  //     let sort = {};
+  //     let whereClause = { isDeleted: false };
+  //     if (sortField) {
+  //       sort = {
+  //         [sortField]: sortValue === "ASC" ? -1 : 1,
+  //       };
+  //     } else {
+  //       sort = {
+  //         name: 1,
+  //       };
+  //     }
 
-      let leave = await LeavesManagement.find(user, whereClause)
-        .skip(page > 0 ? +limit * (+page - 1) : 0)
-        .limit(+limit || 20)
-        .sort(sort)
-        .populate({
-          path: "userId",
-          select: ["firstname", "lastname", "email", "profile"],
-        });
-      return res
-        .status(200)
-        .json({ success: true, data: leave.docs ? leave.docs : leave });
-    } catch (error) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-  }
+  //     let leave = await LeavesManagement.find(user, whereClause)
+  //       .skip(page > 0 ? +limit * (+page - 1) : 0)
+  //       .limit(+limit || 20)
+  //       .sort(sort)
+  //       .populate({
+  //         path: "userId",
+  //         select: ["firstname", "lastname", "email", "profile"],
+  //       });
+  //     return res
+  //       .status(200)
+  //       .json({ success: true, data: leave.docs ? leave.docs : leave });
+  //   } catch (error) {
+  //     return res.status(500).json({ success: false, message: error.message });
+  //   }
+  // }
 
   /**
    * For Cancel Leave
@@ -281,6 +291,7 @@ class LeaveController {
    */
   async cancelLeave(req, res) {
     try {
+      leavesLogs.info("cancelLeave api request data " + JSON.stringify(req.body));
       if (req.body.isApproved) {
         //get current leave data
         let leaveData = await LeavesManagement.findOne(
@@ -336,12 +347,14 @@ class LeaveController {
           status: "cancel",
         }
       );
+      leavesLogs.info("Successfully leave leave cancel");
       return res.status(200).json({
         success: true,
         data: {},
         message: "Successfully Leave Cancel",
       });
     } catch (error) {
+      leavesLogs.error("Error while cancelLeave api" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -407,6 +420,7 @@ class LeaveController {
    */
   async rejectLeave(req, res) {
     try {
+      leavesLogs.info("rejec leave api request data" + req.params.id);
       await LeavesManagement.updateOne(
         {
           _id: req.params.id,
@@ -424,6 +438,7 @@ class LeaveController {
         message: "Successfully Leave Rejected",
       });
     } catch (error) {
+      leavesLogs.error("Error while reject leave" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -436,6 +451,7 @@ class LeaveController {
    */
   async getLeaveData(req, res) {
     try {
+      leavesLogs.info("Request data of getLeaveData api " + req.params.id);
       let leaveData = await LeavesManagement.findOne({
         _id: req.params.id,
       });
@@ -445,6 +461,7 @@ class LeaveController {
         data: leaveData
       });
     } catch (error) {
+      leavesLogs.error("Error while process getLeaveData api" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -468,21 +485,24 @@ class LeaveController {
         message: "",
       });
     } catch (error) {
+      leavesLogs.error("Error while process publicHolidayList api" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 
   async getUpcomingLeaves(req, res) {
     try {
+      let date = moment();
+      leavesLogs.info("Request data of getUpcomingLeaves api " + req.currentUser._id);
       let condition = {
         isDeleted: {
           $ne: true,
         },
-        status: "pending",
-        userId: req.params.userId,
+        status: "approved",
+        userId: req.currentUser._id,
       };
       condition["leaveFrom"] = {
-        $gte: getUtcTime(req.body.leaveFrom, timezone, "YYYY/MM/DD HH:mm:ss"),
+        $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
       };
 
       let query = [
@@ -498,6 +518,7 @@ class LeaveController {
         message: "",
       });
     } catch (error) {
+      leavesLogs.error("Error while process getUpcomingLeaves api" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -510,6 +531,7 @@ class LeaveController {
    */
   async overviewDetails(req, res) {
     try {
+      leavesLogs.info("overviewDetails api request, UserID :- " + req.currentUser._id);
       let date = moment();
       let currentYear = moment().format("YYYY")
       let query = [
@@ -521,7 +543,7 @@ class LeaveController {
               $elemMatch: {
                 holidayDate:
                 {
-                  $gte: getUtcTime(date, timezone, "YYYY/MM/DD HH:mm:ss"),
+                  $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
                 }
               }
             }
@@ -531,7 +553,7 @@ class LeaveController {
         {
           $match: {
             "holidayList.holidayDate": {
-              $gte: getUtcTime(date, timezone, "YYYY/MM/DD HH:mm:ss"),
+              $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
             }
           }
         },
@@ -561,8 +583,8 @@ class LeaveController {
       let endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
       let condition = {
         clockOut: {
-          $gte: getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
-          $lte: getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
+          $gte: commonFunction.getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
+          $lte: commonFunction.getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
         },
         userId: req.currentUser._id
       }
@@ -581,60 +603,61 @@ class LeaveController {
         message: "Successfully get all upcoming holiday list",
       });
     } catch (error) {
+      leavesLogs.error("Error while process overviewDetails api" + JSON.stringify(error));
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 }
 
-const workingDaysCount = (start, end) => {
-  var first = start.clone().endOf("week"); // end of first week
-  var last = end.clone().startOf("week"); // start of last week
-  var days = (last.diff(first, "days") * 5) / 7; // this will always multiply of 7
-  var wfirst = first.day() - start.day(); // check first week
-  if (start.day() == 0) --wfirst; // -1 if start with sunday
-  var wlast = end.day() - last.day(); // check last week
-  if (end.day() == 6) --wlast; // -1 if end with saturday
-  return wfirst + Math.floor(days) + wlast; // get the total
-};
+// const workingDaysCount = (start, end) => {
+//   var first = start.clone().endOf("week"); // end of first week
+//   var last = end.clone().startOf("week"); // start of last week
+//   var days = (last.diff(first, "days") * 5) / 7; // this will always multiply of 7
+//   var wfirst = first.day() - start.day(); // check first week
+//   if (start.day() == 0) --wfirst; // -1 if start with sunday
+//   var wlast = end.day() - last.day(); // check last week
+//   if (end.day() == 6) --wlast; // -1 if end with saturday
+//   return wfirst + Math.floor(days) + wlast; // get the total
+// };
 
-/**
- * Function is used for get utc time
- * @param {*} input_time
- * @param {*} utc_offset
- * @param {*} input_format
- * @param {*} output_format
- */
-const getUtcTime = (
-  input_time,
-  utc_offset,
-  input_format,
-  output_format = true
-) => {
-  let dateObject = moment(input_time, input_format);
-  if (output_format == true) {
-    return dateObject
-      .add(convertUtcOffsetToMinute(utc_offset), "minute")
-      .toDate();
-  } else {
-    return dateObject
-      .add(convertUtcOffsetToMinute(utc_offset), "minute")
-      .format(output_format);
-  }
-};
+// /**
+//  * Function is used for get utc time
+//  * @param {*} input_time
+//  * @param {*} utc_offset
+//  * @param {*} input_format
+//  * @param {*} output_format
+//  */
+// const getUtcTime = (
+//   input_time,
+//   utc_offset,
+//   input_format,
+//   output_format = true
+// ) => {
+//   let dateObject = moment(input_time, input_format);
+//   if (output_format == true) {
+//     return dateObject
+//       .add(commonFunction.convertUtcOffsetToMinute(utc_offset), "minute")
+//       .toDate();
+//   } else {
+//     return dateObject
+//       .add(commonFunction.convertUtcOffsetToMinute(utc_offset), "minute")
+//       .format(output_format);
+//   }
+// };
 
-/**
- * This function is used for convert timezone into minutes
- * @param {*} tz
- */
-const convertUtcOffsetToMinute = (tz) => {
-  let offset = tz.split(":");
-  offset[0] = parseInt(offset[0]);
-  offset[1] = parseInt(offset[1]);
-  let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
-  if (offset[0] < 0) {
-    tz_minute = tz_minute * -1;
-  }
-  return tz_minute * -1;
-};
+// /**
+//  * This function is used for convert timezone into minutes
+//  * @param {*} tz
+//  */
+// const convertUtcOffsetToMinute = (tz) => {
+//   let offset = tz.split(":");
+//   offset[0] = parseInt(offset[0]);
+//   offset[1] = parseInt(offset[1]);
+//   let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
+//   if (offset[0] < 0) {
+//     tz_minute = tz_minute * -1;
+//   }
+//   return tz_minute * -1;
+// };
 
 module.exports = new LeaveController();
