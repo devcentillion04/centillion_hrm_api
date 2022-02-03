@@ -4,7 +4,7 @@ const router = express.Router();
 const { validate } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
 
-router.get("/:id", leaveAttendenceReqController.index);
+router.get("/", leaveAttendenceReqController.index);
 router.post("/create", auth, leaveAttendenceReqController.create);
 router.put("/update/:id", leaveAttendenceReqController.update);
 router.put("/approve/:id", auth, leaveAttendenceReqController.approve);
