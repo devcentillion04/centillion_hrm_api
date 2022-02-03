@@ -1,6 +1,7 @@
 const { UserSchema } = require("../../../models/user");
 const moment = require("moment");
 const { hashSync, genSaltSync, compare } = require("bcrypt");
+const { Types } = require("mongoose");
 class UserController {
   async index(req, res) {
     let sort_key = req.query.sort_key || "name";
@@ -134,6 +135,9 @@ class UserController {
         isDeleted: 1,
         profile: 1,
         employeeType: 1,
+        designation: 1,
+        mobileno: 1,
+        joiningDate: 1
       });
 
       let TeamLeader = await UserSchema.findOne({
