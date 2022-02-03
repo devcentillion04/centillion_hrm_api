@@ -123,7 +123,7 @@ class UserController {
    */
   async getTeamDataById(req, res) {
     try {
-      let users = await UserSchema.find({
+      let teamData = await UserSchema.find({
         teamLeader: req.currentUser._id,
         isDeleted: false,
       }, {
@@ -135,7 +135,39 @@ class UserController {
         profile: 1,
         employeeType: 1,
       });
-      return res.status(200).json({ success: true, data: users });
+
+      let TeamLeader = await UserSchema.findOne({
+        _id: req.currentUser.teamLeader,
+        isDeleted: false,
+      }, {
+        firstname: 1,
+        lastname: 1,
+        email: 1,
+        mobileno: 1,
+        isDeleted: 1,
+        profile: 1,
+        employeeType: 1,
+      });
+
+      let peers = await UserSchema.find({
+        teamLeader: req.currentUser.teamLeader
+      }, {
+        firstname: 1,
+        lastname: 1,
+        email: 1,
+        mobileno: 1,
+        isDeleted: 1,
+        profile: 1,
+        employeeType: 1,
+      });
+
+      let data = {
+        teamData: teamData,
+        TeamLeader: TeamLeader,
+        peers: peers
+      }
+
+      return res.status(200).json({ success: true, data: data });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
