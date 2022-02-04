@@ -48,7 +48,7 @@ class leaveAttendenceController {
         let leave =
             req.query.page || req.query.limit
                 ? await leaveAttendenceReqSchema.paginate(criteria, options)
-                : await leaveAttendenceReqSchema.find({ criteria })
+                : await leaveAttendenceReqSchema.find(criteria)
                     .sort({
                         createdAt: -1,
                     })
@@ -56,7 +56,6 @@ class leaveAttendenceController {
                         path: "userId",
                         select: ["firstname", "lastname", "email", "profile"],
                     });
-
         return res
             .status(200)
             .json({ success: true, data: leave.docs ? leave.docs : leave });
