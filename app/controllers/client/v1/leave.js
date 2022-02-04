@@ -239,50 +239,6 @@ class LeaveController {
     }
   }
 
-  // /**
-  //  * FOr List leave data by UserId
-  //  * @param {*} req
-  //  * @param {*} res
-  //  * @returns
-  //  */
-  // async show(req, res) {
-  //   try {
-  //     let { id } = req.params;
-  //     let user = {};
-  //     if (id) {
-  //       user = { ...req.params._id, userId: id };
-  //     } else {
-  //       user = { ...req.params._id };
-  //     }
-  //     let { page, limit, sortField, sortValue } = req.query;
-  //     let sort = {};
-  //     let whereClause = { isDeleted: false };
-  //     if (sortField) {
-  //       sort = {
-  //         [sortField]: sortValue === "ASC" ? -1 : 1,
-  //       };
-  //     } else {
-  //       sort = {
-  //         name: 1,
-  //       };
-  //     }
-
-  //     let leave = await LeavesManagement.find(user, whereClause)
-  //       .skip(page > 0 ? +limit * (+page - 1) : 0)
-  //       .limit(+limit || 20)
-  //       .sort(sort)
-  //       .populate({
-  //         path: "userId",
-  //         select: ["firstname", "lastname", "email", "profile"],
-  //       });
-  //     return res
-  //       .status(200)
-  //       .json({ success: true, data: leave.docs ? leave.docs : leave });
-  //   } catch (error) {
-  //     return res.status(500).json({ success: false, message: error.message });
-  //   }
-  // }
-
   /**
    * For Cancel Leave
    * @param {*} req
@@ -292,20 +248,20 @@ class LeaveController {
   async cancelLeave(req, res) {
     try {
       leavesLogs.info("cancelLeave api request data " + JSON.stringify(req.body));
-      if (req.body.isApproved) {
+      let leaveData = await LeavesManagement.findOne(
+        {
+          _id: req.params.id,
+          isDeleted: false,
+        },
+        {
+          totalDay: 1,
+          isPaid: 1,
+          isApproved: 1,
+          userId: 1,
+        }
+      );
+      if (leaveData.isApproved) {
         //get current leave data
-        let leaveData = await LeavesManagement.findOne(
-          {
-            _id: req.params.id,
-            isDeleted: false,
-          },
-          {
-            totalDay: 1,
-            isPaid: 1,
-            isApproved: 1,
-            userId: 1,
-          }
-        );
         if (leaveData.isApproved) {
           //get user data
           let userData = await UserSchema.findOne(
@@ -321,10 +277,10 @@ class LeaveController {
           //chek leave type & update count
           if (leaveData.isPaid == true) {
             userData.totalAvailablePaidLeave =
-              userData.totalAvailablePaidLeave + leaveData.totalDay;
+              userData.totalAvailablePaidLeave - leaveData.totalDay;
           } else {
             userData.totalUnpaidLeave =
-              userData.totalUnpaidLeave + leaveData.totalDay;
+              userData.totalUnpaidLeave - leaveData.totalDay;
           }
           //update user data
           await UserSchema.updateOne(
@@ -373,17 +329,7 @@ class LeaveController {
         path: "userId",
         select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
       });
-      await LeavesManagement.updateOne(
-        {
-          _id: req.params.id,
-        },
-        {
-          approvedBy: req.body.approvedBy,
-          isApproved: true,
-          status: "approved",
-          approveDate: moment(),
-        }
-      );
+
       if (leaveData.isPaid == true) {
         leaveData.userId.totalAvailablePaidLeave =
           leaveData.userId.totalAvailablePaidLeave - leaveData.totalDay;
@@ -401,7 +347,17 @@ class LeaveController {
           totalUnpaidLeave: leaveData.userId.totalUnpaidLeave,
         }
       );
-
+      await LeavesManagement.updateOne(
+        {
+          _id: req.params.id,
+        },
+        {
+          approvedBy: req.body.approvedBy,
+          isApproved: true,
+          status: "approved",
+          approveDate: moment(),
+        }
+      );
       return res.status(200).json({
         success: true,
         data: {},
@@ -533,7 +489,10 @@ class LeaveController {
     try {
       leavesLogs.info("overviewDetails api request, UserID :- " + req.currentUser._id);
       let date = moment();
-      let currentYear = moment().format("YYYY")
+      let currentYear = moment().format("YYYY");
+      let startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
+      let endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
+
       let query = [
         {
           $match: {
@@ -569,18 +528,32 @@ class LeaveController {
       let holidayList = await holidaySchema.aggregate(query);
       let pendingLeaveList = await LeavesManagement.find({
         userId: req.currentUser._id,
-        status: "pending"
+        status: "pending",
+        leaveFrom: {
+          $gte: commonFunction.getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD")
+        },
+        leaveTo: {
+          $lte: commonFunction.getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
+        }
       }, {
-        _id: 1
+        _id: 1,
+        leaveFrom: 1,
+        leaveTo: 1
       });
-      let absentLeaveList = await LeavesManagement.find({
+      let approveList = await LeavesManagement.find({
         userId: req.currentUser._id,
-        status: "approved"
+        status: "approved",
+        leaveFrom: {
+          $gte: commonFunction.getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD")
+        },
+        leaveTo: {
+          $lte: commonFunction.getUtcTime(endOfMonth, "-5:30", "YYYY/MM/DD")
+        }
       }, {
-        _id: 1
+        _id: 1,
+        leaveFrom: 1,
+        leaveTo: 1
       });
-      let startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
-      let endOfMonth = moment().endOf('month').format('YYYY-MM-DD');
       let condition = {
         clockOut: {
           $gte: commonFunction.getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
@@ -594,8 +567,8 @@ class LeaveController {
       let resData = {
         upComingHolidayList: holidayList,
         pendingLeaveListCount: pendingLeaveList.length,
-        absentLeaveListCount: absentLeaveList.length,
-        totalAttendance: currentMonthAttendance.length
+        approveList: approveList.length,
+        totalAttendance: currentMonthAttendance
       }
       return res.status(200).json({
         success: true,
@@ -607,57 +580,52 @@ class LeaveController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
+
+
+  // /**
+  //  * FOr List leave data by UserId
+  //  * @param {*} req
+  //  * @param {*} res
+  //  * @returns
+  //  */
+  // async show(req, res) {
+  //   try {
+  //     let { id } = req.params;
+  //     let user = {};
+  //     if (id) {
+  //       user = { ...req.params._id, userId: id };
+  //     } else {
+  //       user = { ...req.params._id };
+  //     }
+  //     let { page, limit, sortField, sortValue } = req.query;
+  //     let sort = {};
+  //     let whereClause = { isDeleted: false };
+  //     if (sortField) {
+  //       sort = {
+  //         [sortField]: sortValue === "ASC" ? -1 : 1,
+  //       };
+  //     } else {
+  //       sort = {
+  //         name: 1,
+  //       };
+  //     }
+
+  //     let leave = await LeavesManagement.find(user, whereClause)
+  //       .skip(page > 0 ? +limit * (+page - 1) : 0)
+  //       .limit(+limit || 20)
+  //       .sort(sort)
+  //       .populate({
+  //         path: "userId",
+  //         select: ["firstname", "lastname", "email", "profile"],
+  //       });
+  //     return res
+  //       .status(200)
+  //       .json({ success: true, data: leave.docs ? leave.docs : leave });
+  //   } catch (error) {
+  //     return res.status(500).json({ success: false, message: error.message });
+  //   }
+  // }
+
 }
-
-// const workingDaysCount = (start, end) => {
-//   var first = start.clone().endOf("week"); // end of first week
-//   var last = end.clone().startOf("week"); // start of last week
-//   var days = (last.diff(first, "days") * 5) / 7; // this will always multiply of 7
-//   var wfirst = first.day() - start.day(); // check first week
-//   if (start.day() == 0) --wfirst; // -1 if start with sunday
-//   var wlast = end.day() - last.day(); // check last week
-//   if (end.day() == 6) --wlast; // -1 if end with saturday
-//   return wfirst + Math.floor(days) + wlast; // get the total
-// };
-
-// /**
-//  * Function is used for get utc time
-//  * @param {*} input_time
-//  * @param {*} utc_offset
-//  * @param {*} input_format
-//  * @param {*} output_format
-//  */
-// const getUtcTime = (
-//   input_time,
-//   utc_offset,
-//   input_format,
-//   output_format = true
-// ) => {
-//   let dateObject = moment(input_time, input_format);
-//   if (output_format == true) {
-//     return dateObject
-//       .add(commonFunction.convertUtcOffsetToMinute(utc_offset), "minute")
-//       .toDate();
-//   } else {
-//     return dateObject
-//       .add(commonFunction.convertUtcOffsetToMinute(utc_offset), "minute")
-//       .format(output_format);
-//   }
-// };
-
-// /**
-//  * This function is used for convert timezone into minutes
-//  * @param {*} tz
-//  */
-// const convertUtcOffsetToMinute = (tz) => {
-//   let offset = tz.split(":");
-//   offset[0] = parseInt(offset[0]);
-//   offset[1] = parseInt(offset[1]);
-//   let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
-//   if (offset[0] < 0) {
-//     tz_minute = tz_minute * -1;
-//   }
-//   return tz_minute * -1;
-// };
 
 module.exports = new LeaveController();
