@@ -4,16 +4,28 @@ const AttendanceSchema = require("../../../models/attendence");
 const { UserSchema } = require("../../../models/user");
 const { LeavesManagement } = require("../../../models/leave");
 const moment = require("moment-timezone");
-const timezone = "+5:30";
+const commonFunction = require("../../../common/function");
+let requestLogs = commonFunction.fileLogs("leaveAttendanceRequest");
 class leaveAttendenceController {
 
     async index(req, res) {
+        requestLogs.info("Index api ,UserId :- " + req.currentUser._id);
         let { page, limit, sortField, sortValue, sort_key, sort_direction } = req.query;
         let sort = {};
         let criteria = { isDeleted: false };
+        let currentUser = await UserSchema.findOne({
+            _id: req.currentUser._id,
+            isDeleted: false
+        }, {
+            role: 1,
+            _id: 1
+        }).populate({
+            path: "role",
+            select: ["name"],
+        });
         if (sortField) {
             sort = {
-                [sortField]: sortValue === "AES" ? 1 : -1,
+                [sortField]: sortValue === "ASC" ? 1 : -1,
             };
         } else {
             sort = {
@@ -30,7 +42,9 @@ class leaveAttendenceController {
             sort: { createdAt: -1 },
             populate: populateData,
         };
-
+        if (currentUser.role.name == "USER") {
+            criteria.userId = req.currentUser._id;
+        }
         let leave =
             req.query.page || req.query.limit
                 ? await leaveAttendenceReqSchema.paginate(criteria, options)
@@ -57,6 +71,7 @@ class leaveAttendenceController {
      */
     async create(req, res) {
         try {
+            requestLogs.info("Create api call by currentUser Id :-" + req.currentUser._id + " ,Request Data :- " + JSON.stringify(req.body))
             let userData = await UserSchema.findOne(
                 {
                     _id: req.currentUser._id,
@@ -85,6 +100,7 @@ class leaveAttendenceController {
                 return res.status(500).json({ success: false, message: resData.message });
             }
         } catch (error) {
+            requestLogs.error("Error while calling create api UserId :- " + req.currentUser._id + " ,Error :- " + JSON.stringify(error));
             return res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -97,6 +113,7 @@ class leaveAttendenceController {
      */
     async approve(req, res) {
         try {
+            requestLogs.info("Approve APi ,Requested Params :- " + req.params.id + " CurrentUserId :- " + req.currentUser._id);
             let requestedData = await leaveAttendenceReqSchema.findOne({
                 _id: req.params.id
             }).populate({
@@ -181,13 +198,20 @@ class leaveAttendenceController {
                 return res.status(500).json({ success: false, message: "Error while update document" });
             }
         } catch (error) {
-            console.log(error);
+            requestLogs.error("Error while calling approve api UserId :- " + req.currentUser._id + " ,Error :- " + JSON.stringify(error));
             return res.status(500).json({ success: false, message: error.message });
         }
     }
 
-    async getAllRequestById(req, res) {
+    /**
+     * Get All request by Id
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
+    async getAllPendingRequest(req, res) {
         try {
+            requestLogs.info("getAllPendingRequest APi ,Requested Params :- " + req.params.id + " CurrentUserId :- " + req.currentUser._id);
             let requestedData = await leaveAttendenceReqSchema.find({
                 requestedTo: req.currentUser._id,
                 isDeleted: false,
@@ -195,9 +219,10 @@ class leaveAttendenceController {
             }).populate({
                 path: "userId",
                 select: ["firstname", "lastname", "email", "profile"],
-            });;
+            });
             return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
         } catch (error) {
+            requestLogs.error("Error while calling getAllPendingRequest api UserId :- " + req.currentUser._id + " ,Error :- " + JSON.stringify(error));
             return res.status(500).json({ success: false, message: error.message });
         }
     }
@@ -210,6 +235,7 @@ class leaveAttendenceController {
      */
     async delete(req, res) {
         try {
+            requestLogs.info("delete APi ,Requested Params :- " + req.params.id);
             await leaveAttendenceReqSchema.updateOne({
                 _id: req.params.id,
             }, {
@@ -217,12 +243,14 @@ class leaveAttendenceController {
             });
             return res.status(200).json({ success: true, message: "Successfully deleted requestedEntry" });
         } catch (error) {
+            requestLogs.error("Error while calling delete api ,Error :- " + JSON.stringify(error));
             return res.status(500).json({ success: false, message: error.message });
         }
     }
 
     async rejectRequest(req, res) {
         try {
+            requestLogs.info("rejectRequest api , Requested params :- " + req.params.id + " Current User Id :- " + req.currentUser._id);
             await leaveAttendenceReqSchema.findOne({
                 _id: req.params.id,
                 isDeleted: false
@@ -233,12 +261,14 @@ class leaveAttendenceController {
             });
             return res.status(200).json({ success: true, message: "Successfully Rejected requestedEntry" });
         } catch (error) {
+            requestLogs.error("Error while calling rejectRequest api ,Error :- " + JSON.stringify(error), " CurrentUser Id :- " + req.currentUser._id);
             return res.status(500).json({ success: false, message: error.message });
         }
     }
 
     async update(req, res) {
         try {
+            requestLogs.info("update api , Current User Id :- " + req.currentUser._id + " ,request Body :- " + JSON.stringify(req.body));
             let userData = await UserSchema.findOne(
                 {
                     _id: req.currentUser._id,
@@ -268,6 +298,7 @@ class leaveAttendenceController {
                 return res.status(500).json({ success: false, message: resData.message });
             }
         } catch (error) {
+            requestLogs.error("Error while calling update api ,Error :- " + JSON.stringify(error), " CurrentUser Id :- " + req.currentUser._id);
             return res
                 .status(500)
                 .json({ success: false, message: error.message });
@@ -276,63 +307,14 @@ class leaveAttendenceController {
     }
 };
 
-const workingDaysCount = (start, end) => {
-    var first = start.clone().endOf("week"); // end of first week
-    var last = end.clone().startOf("week"); // start of last week
-    var days = (last.diff(first, "days") * 5) / 7; // this will always multiply of 7
-    var wfirst = first.day() - start.day(); // check first week
-    if (start.day() == 0) --wfirst; // -1 if start with sunday
-    var wlast = end.day() - last.day(); // check last week
-    if (end.day() == 6) --wlast; // -1 if end with saturday
-    return wfirst + Math.floor(days) + wlast; // get the total
-};
-
-/**
- * Function is used for get utc time
- * @param {*} input_time
- * @param {*} utc_offset
- * @param {*} input_format
- * @param {*} output_format
- */
-const getUtcTime = (
-    input_time,
-    utc_offset,
-    input_format,
-    output_format = true
-) => {
-    let dateObject = moment(input_time, input_format);
-    if (output_format == true) {
-        return dateObject
-            .add(convertUtcOffsetToMinute(utc_offset), "minute")
-            .toDate();
-    } else {
-        return dateObject
-            .add(convertUtcOffsetToMinute(utc_offset), "minute")
-            .format(output_format);
-    }
-};
-
-/**
- * This function is used for convert timezone into minutes
- * @param {*} tz
- */
-const convertUtcOffsetToMinute = (tz) => {
-    let offset = tz.split(":");
-    offset[0] = parseInt(offset[0]);
-    offset[1] = parseInt(offset[1]);
-    let tz_minute = Math.abs(offset[0]) * 60 + Math.abs(offset[1]);
-    if (offset[0] < 0) {
-        tz_minute = tz_minute * -1;
-    }
-    return tz_minute * -1;
-};
-
+//prpare data for leaveAttance request
 const processData = (reqData, data, userData) => {
     return new Promise((resolve, reject) => {
+
         let start = moment(reqData.startDate, "YYYY-MM-DD").utc(false);
         let currentDate = moment().format("YYYY-MM-DD");
         let leaveFlag = moment(currentDate).isAfter(start, "days");
-        let leaveDaysCount = workingDaysCount(data.startDate, data.endDate);
+        let leaveDaysCount = commonFunction.workingDaysCount(data.startDate, data.endDate);
         let publicHolidayList = {
             holidayList: [
                 {

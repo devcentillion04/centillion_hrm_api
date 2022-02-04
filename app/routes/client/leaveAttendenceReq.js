@@ -4,11 +4,11 @@ const router = express.Router();
 const { validate } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
 
-router.get("/", leaveAttendenceReqController.index);
+router.get("/", auth, leaveAttendenceReqController.index);
 router.post("/create", auth, leaveAttendenceReqController.create);
 router.put("/update/:id", leaveAttendenceReqController.update);
 router.put("/approve/:id", auth, leaveAttendenceReqController.approve);
-router.get("/test/getallrequestbyid", auth, leaveAttendenceReqController.getAllRequestById);
+router.get("/test/getAllPendingRequest", auth, leaveAttendenceReqController.getAllPendingRequest);
 router.put("/delete/:id", leaveAttendenceReqController.delete);
-router.put("/rejectRequest/:id", leaveAttendenceReqController.rejectRequest);
+router.put("/rejectRequest/:id",auth, leaveAttendenceReqController.rejectRequest);
 module.exports = router;
