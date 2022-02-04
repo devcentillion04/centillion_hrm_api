@@ -564,8 +564,9 @@ class LeaveController {
       let currentMonthAttendance = await Attendance.find(condition, {
         clockIn: 1
       });
+      var data = holidayList && holidayList[0].holidayList
       let resData = {
-        upComingHolidayList: holidayList,
+        holidayList: data,
         pendingLeaveListCount: pendingLeaveList.length,
         approveList: approveList.length,
         totalAttendance: currentMonthAttendance
