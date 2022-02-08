@@ -11,5 +11,5 @@ router.put("/approve/:id", auth, leaveAttendenceReqController.approve);
 router.get("/test/getAllPendingRequest", auth, leaveAttendenceReqController.getAllPendingRequest);
 router.put("/delete/:id", leaveAttendenceReqController.delete);
 router.put("/rejectRequest/:id", auth, leaveAttendenceReqController.rejectRequest);
-router.get("getleaveattandanceData/:id", auth, leaveAttendenceReqController.getDataById);
+router.get("/getleaveattandanceData/:id", auth, leaveAttendenceReqController.getDataById);
 module.exports = router;
