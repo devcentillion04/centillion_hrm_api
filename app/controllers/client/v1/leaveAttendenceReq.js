@@ -256,7 +256,7 @@ class leaveAttendenceController {
     async rejectRequest(req, res) {
         try {
             requestLogs.info("rejectRequest api , Requested params :- " + req.params.id + " Current User Id :- " + req.currentUser._id);
-            await leaveAttendenceReqSchema.findOne({
+            await leaveAttendenceReqSchema.updateOne({
                 _id: req.params.id,
                 isDeleted: false
             }, {
