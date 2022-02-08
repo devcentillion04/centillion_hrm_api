@@ -39,7 +39,7 @@ const leaveAttendenceReqSchema = new Schema(
         rejectDate: {
             type: Date,
         },
-        totalHours: {
+        totalMinute: {
             type: Number
         },
         requestType: {

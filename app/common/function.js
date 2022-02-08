@@ -2,7 +2,7 @@ const moment = require("moment-timezone");
 
 module.exports = {
 
-    timezone: "+5:30",
+    timezone: "-5:30",
 
     fileLogs(logName) {
         return require('simple-node-logger').createRollingFileLogger({

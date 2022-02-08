@@ -564,12 +564,14 @@ class LeaveController {
       let currentMonthAttendance = await Attendance.find(condition, {
         clockIn: 1
       });
-      var data = holidayList && holidayList[0].holidayList
+      let data = await getTotalWorkingDays(currentYear);
       let resData = {
-        holidayList: data,
+        holidayList: holidayList && holidayList[0].holidayList ? holidayList && holidayList[0].holidayList : holidayList,
         pendingLeaveListCount: pendingLeaveList.length,
         approveList: approveList.length,
-        totalAttendance: currentMonthAttendance
+        totalAttendance: currentMonthAttendance.length,
+        totalDaysInMonth: data.totalDaysInMonth,
+        actualWorkingDaysInMonth: data.actualWorkingDaysInMonth
       }
       return res.status(200).json({
         success: true,
@@ -627,6 +629,71 @@ class LeaveController {
   //   }
   // }
 
+}
+
+let getTotalWorkingDays = (currentYear) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let startDate = moment().startOf('month');
+      let endDate = moment().endOf('month');
+      let query = [
+        {
+          $match: {
+            isDeleted: false,
+            year: currentYear,
+            holidayList: {
+              $elemMatch: {
+                holidayDate:
+                {
+                  $gte: commonFunction.getUtcTime(startDate, "-05:30", "YYYY/MM/DD HH:mm:ss"),
+                  $lte: commonFunction.getUtcTime(endDate, "-05:30", "YYYY/MM/DD HH:mm:ss"),
+                }
+              }
+            }
+          }
+        },
+        { $unwind: "$holidayList" },
+        {
+          $match: {
+            "holidayList.holidayDate": {
+              $gte: commonFunction.getUtcTime(startDate, "-05:30", "YYYY/MM/DD HH:mm:ss"),
+              $lte: commonFunction.getUtcTime(endDate, "-05:30", "YYYY/MM/DD HH:mm:ss"),
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$_id", holidayList: { $push: "$holidayList" }, year: {
+              $first: '$year'
+            }
+          }
+        },
+        { $project: { holidayList: 1, year: 1 } }
+      ];
+      let currentMonthHolidayList = await holidaySchema.aggregate(query);
+      let totalDays = commonFunction.workingDaysCount(startDate, endDate);
+      let publicHolidayCount = 0;
+      if (currentMonthHolidayList && currentMonthHolidayList.length > 0 && currentMonthHolidayList[0] && currentMonthHolidayList[0].holidayList) {
+        currentMonthHolidayList[0].holidayList.forEach((element) => {
+          if (!(element.day == "Sunday" || element.day == "Satuerday")) {
+            let date = moment(element.holidayDate, "YYYYY-MM-DD").format(
+              "YYYY-MM-DD"
+            );
+            if (moment(date).isBetween(startDate, endDate)) {
+              publicHolidayCount++;
+            }
+          }
+        });
+      }
+      resolve({
+        totalDaysInMonth: totalDays,
+        actualWorkingDaysInMonth: totalDays - publicHolidayCount
+      })
+    } catch (error) {
+      leavesLogs.error("Error while process getTotalWorkingDays fun" + JSON.stringify(error));
+      reject(error);
+    }
+  })
 }
 
 module.exports = new LeaveController();

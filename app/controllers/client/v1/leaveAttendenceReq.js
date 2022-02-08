@@ -127,7 +127,7 @@ class leaveAttendenceController {
                         clockIn: moment(requestedData.startDate).utc(false),
                         workDate: moment(requestedData.startDate).startOf("day").utc(true).toISOString(),
                         clockOut: moment(requestedData.endDate).utc(false),
-                        workingHours: requestedData.totalHours
+                        workingHours: requestedData.totalMinute
                     }
                     let data = await new AttendanceSchema({
                         ...attendenceData,
@@ -247,6 +247,12 @@ class leaveAttendenceController {
         }
     }
 
+    /**
+     * Reject request of leaveAttandance
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
     async rejectRequest(req, res) {
         try {
             requestLogs.info("rejectRequest api , Requested params :- " + req.params.id + " Current User Id :- " + req.currentUser._id);
@@ -265,6 +271,12 @@ class leaveAttendenceController {
         }
     }
 
+    /**
+     * Update leaveAtandance Data
+     * @param {*} req object
+     * @param {*} res 
+     * @returns 
+     */
     async update(req, res) {
         try {
             requestLogs.info("update api , Current User Id :- " + req.currentUser._id + " ,request Body :- " + JSON.stringify(req.body));
@@ -302,6 +314,26 @@ class leaveAttendenceController {
                 .status(500)
                 .json({ success: false, message: error.message });
 
+        }
+    }
+
+    /**
+     * Get LeaveAttandance Document by Id
+     * @param {*} req  id of document
+     * @param {*} res object
+     * @returns 
+     */
+    async getDataById(req, res) {
+        try {
+            requestLogs.info("getDataById APi ,Requested Params :- " + req.params.id);
+            let data = await leaveAttendenceReqSchema.findOne({
+                _id: req.params.id,
+                isDeleted: false
+            });
+            return res.status(200).json({ success: true, message: "Successfully get document", data: data });
+        } catch {
+            requestLogs.error("Error while calling getDataById api ,Error :- " + JSON.stringify(error));
+            return res.status(500).json({ success: false, message: error.message });
         }
     }
 };
@@ -407,7 +439,10 @@ const processData = (reqData, data, userData) => {
                     });
                 }
             } else if (reqData.requestType == "attendance") {
-                if (moment(data.startDate).isSame(data.endDate)) {
+                if (moment(moment(data.startDate).format("YYYY-MM-DD")).isSame(moment(data.endDate).format("YYYY-MM-DD"))) {
+                    let clockInDate = moment(data.startDate, "YYYY-MM-DDTHH:mm:ss");
+                    let clockOutDate = moment(data.endDate, "YYYY-MM-DDTHH:mm:ss");
+                    data.totalMinute = clockOutDate.diff(clockInDate, 'second') / 60;
                     resolve({
                         isCreatedFlag: true,
                         data: data
