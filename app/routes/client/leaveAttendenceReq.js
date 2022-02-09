@@ -1,5 +1,5 @@
 const express = require("express");
-const leaveAttendenceReqController = require("../../controllers/client/v1/leaveattendencereq");
+const leaveAttendenceReqController = require("../../controllers/client/v1/leaveAttendenceReq");
 const router = express.Router();
 const { validate } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");

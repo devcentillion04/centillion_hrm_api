@@ -11,7 +11,7 @@ class designationController {
                     : -1
                 : 1;
 
-            let criteria = {};
+            let criteria = { isDeleted: false };
 
             if (req.query.type) {
                 Object.assign(criteria, { type: req.query.type });
@@ -119,7 +119,6 @@ class designationController {
                 _id: req.params.id,
                 isDeleted: false
             });
-
             return res.status(200).json({ success: true, message: "Successfully get Designation", data: designationData });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
