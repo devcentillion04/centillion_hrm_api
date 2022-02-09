@@ -2,9 +2,12 @@ const express = require("express");
 const { json, urlencoded } = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
-require("./app/cronJob/clockout");
-
-
+const fs = require('fs');
+// require("./app/cronJob/clockout");
+// require("./app/cronJob/attendanceMail");
+if (!fs.existsSync("./logs")) {
+  fs.mkdirSync("./logs");
+}
 
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
 
