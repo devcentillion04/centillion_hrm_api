@@ -63,12 +63,12 @@ class designationController {
      */
     async updateDesignation(req, res) {
         try {
-            await designationSchema.updateOne({
+            let data = await designationSchema.updateOne({
                 _id: req.params.id,
                 isDeleted: false
             }, {
-                designation: req.body.designation,
-                label: req.body.label
+                label: req.body.label,
+                value: req.body.value
             });
             return res.status(200).json({ success: true, message: "Designation updated successfully" });
         } catch (error) {
