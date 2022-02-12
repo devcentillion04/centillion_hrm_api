@@ -184,7 +184,7 @@ class leaveAttendenceController {
                     let requesTypeData = await leaveAttendenceReqSchema.findOneAndUpdate({
                         _id: req.params.id
                     }, {
-                        // approvedBy: Types.ObjectId(req.currentUser._id),
+
                         approvedBy: req.currentUser._id,
                         status: "Approved",
                         approveDate: moment()

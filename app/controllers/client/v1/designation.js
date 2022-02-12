@@ -11,7 +11,7 @@ class designationController {
                     : -1
                 : 1;
 
-            let criteria = {};
+            let criteria = { isDeleted: false };
 
             if (req.query.type) {
                 Object.assign(criteria, { type: req.query.type });
@@ -63,12 +63,12 @@ class designationController {
      */
     async updateDesignation(req, res) {
         try {
-            await designationSchema.updateOne({
+            let data = await designationSchema.updateOne({
                 _id: req.params.id,
                 isDeleted: false
             }, {
-                designation: req.body.designation,
-                label: req.body.label
+                label: req.body.label,
+                value: req.body.value
             });
             return res.status(200).json({ success: true, message: "Designation updated successfully" });
         } catch (error) {
@@ -119,7 +119,6 @@ class designationController {
                 _id: req.params.id,
                 isDeleted: false
             });
-
             return res.status(200).json({ success: true, message: "Successfully get Designation", data: designationData });
         } catch (error) {
             return res.status(500).json({ success: false, message: error.message });
