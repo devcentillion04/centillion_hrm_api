@@ -8,9 +8,15 @@ const fs = require('fs');
 if (!fs.existsSync("./logs")) {
   fs.mkdirSync("./logs");
 }
+if (!fs.existsSync("./upload")) {
+  fs.mkdirSync("./upload");
+}
+
+if (!fs.existsSync("./upload/salarySlip")) {
+  fs.mkdirSync("./upload/salarySlip");
+}
 
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
-
 require("./app/config/db/connection");
 const clientRoutes = require("./app/routes");
 const adminRoutes = require("./app/routes/admin");

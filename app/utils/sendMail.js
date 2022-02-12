@@ -1,16 +1,16 @@
-const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-import { mailLoggerModel } from "../models";
-import { CONSTANTS } from "../constants";
-const {
-  MAILSTATUS: { FAILED },
-} = CONSTANTS;
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey("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");
+// import { mailLoggerModel } from '../models';
+// import { CONSTANTS } from '../constants';
+// const {
+//   MAILSTATUS: { FAILED },
+// } = CONSTANTS;
 const sendMail = async (to, from, subject, html) => {
   try {
     const sendMailObj = {
       to,
       from,
-      cc: process.env.ADMIN_EMAIL,
+      // cc: process.env.ADMIN_EMAIL,
       subject,
       html,
     };
@@ -27,8 +27,8 @@ const sendMail = async (to, from, subject, html) => {
       };
     }
 
-    const mailLoggerObj = new mailLoggerModel(insertObj);
-    await mailLoggerObj.save();
+    // const mailLoggerObj = new mailLoggerModel(insertObj);
+    // await mailLoggerObj.save();
     return sendMail;
   } catch (error) {
     if (error.response) {
@@ -37,4 +37,7 @@ const sendMail = async (to, from, subject, html) => {
   }
 };
 
-module.exports = sendMail;
+// export default sendMail;
+module.exports = {
+  sendMail,
+};

@@ -330,6 +330,9 @@ const CONSTANTS = {
     REGISTERMAIL: "Sallon Application Registration",
     FORGETPASSWORDEMAIL: "Sallon Application Forget Password",
   },
+  MAX_FILE_SIZE: {
+    pdfFile: 166717
+  }
 };
 
 module.exports = {
