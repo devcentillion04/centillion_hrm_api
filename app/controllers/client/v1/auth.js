@@ -98,7 +98,10 @@ class AuthController {
   async login(req, res) {
     try {
       const { email, password } = req.body;
-      const emailFind = await UserSchema.findOne({ email });
+      const emailFind = await UserSchema.findOne({ email }).populate({
+        path: "role",
+        select: ["name"]
+      });;
       if (emailFind) {
         const isMatch = compareSync(password, emailFind.password);
         if (isMatch) {

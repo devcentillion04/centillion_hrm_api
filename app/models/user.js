@@ -6,6 +6,7 @@ const UserSchema = new Schema(
   {
     firstname: {
       type: String,
+
     },
     lastname: {
       type: String,
@@ -20,9 +21,6 @@ const UserSchema = new Schema(
       type: Date,
     },
     mobileno: {
-      type: Number,
-    },
-    alternateMobileno: {
       type: Number,
     },
     address: {
@@ -54,6 +52,9 @@ const UserSchema = new Schema(
       },
     },
     bankDetails: {
+      accountHolderName: {
+        type: Number,
+      },
       bankName: {
         type: String,
       },
@@ -80,7 +81,7 @@ const UserSchema = new Schema(
       default: false,
     },
     role: {
-      type: String,
+      type: mongoose.Types.ObjectId,
       ref: "role_type",
     },
     employeeType: {
@@ -104,7 +105,31 @@ const UserSchema = new Schema(
     },
     joiningDate: {
       type: Date,
-      required: true,
+    },
+    designation: {
+      type: String,
+    },
+    teamLeader: {
+      type: mongoose.Types.ObjectId,
+      ref: "User",
+    },
+    paymentMode: {
+      type: String
+    },
+    bankName: {
+      type: String
+    },
+    IFSCCode: {
+      type: String
+    },
+    bankAccountNo: {
+      type: Number
+    },
+    PANCard: {
+      type: String
+    },
+    grossSalary: {
+      type: Number
     },
   },
   { timestamps: true, toJSON: { virtuals: true } }

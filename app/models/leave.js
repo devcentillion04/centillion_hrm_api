@@ -32,11 +32,11 @@ const LeavesManagement = new Schema(
       default: false,
     },
     approvedBy: {
-      type: Array,
+      type: mongoose.Types.ObjectId,
       ref: "User",
     },
     rejectedBy: {
-      type: Array,
+      type: mongoose.Types.ObjectId,
       ref: "User",
     },
     isApproved: {

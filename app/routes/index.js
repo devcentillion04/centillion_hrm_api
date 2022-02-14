@@ -8,6 +8,9 @@ const employeeRoutes = require("./client/employee");
 const role = require("./admin/role");
 const permission = require("./admin/permission");
 const leaves = require("./client/leave");
+const designation = require("./client/designation");
+const leaveAttendenceReq = require("./client/leaveAttendenceReq");
+const salarySlip = require("./client/salarySlip");
 router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
 router.use("/attendance", attendanceRoutes);
@@ -16,5 +19,7 @@ router.use("/employee", employeeRoutes);
 router.use("/role", role);
 router.use("/permission", permission);
 router.use("/leave", leaves);
-
+router.use("/designation", designation);
+router.use("/leaveAttendenceReq", leaveAttendenceReq);
+router.use("/salarySlip", salarySlip);
 module.exports = router;

@@ -66,10 +66,15 @@ const deleteOneQuery = async (filter) => {
   const data = await RoleSchema.findByIdAndDelete(filter);
   return data;
 };
+const findbyIdRole = async (id) => {
+  const data = await RoleSchema.findById(id)
+  return data;
+};
 module.exports = {
   findAllQuery,
   updatePermission,
   roleQuery,
   deleteOneQuery,
   updateOneQuery,
+  findbyIdRole
 };

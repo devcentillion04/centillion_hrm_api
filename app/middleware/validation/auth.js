@@ -19,12 +19,12 @@ const register = yup.object().shape({
     .string()
     .required("Password is required")
     .min(6, "Password minimum 6 character is required"),
-  mobileno: yup
-    .string()
-    .matches(phoneRegExp, "Mobile Number is invalid")
-    .test("Only 10 number", (value) => value.length === 10)
-    .required("number is required")
-    .required("Mobile Number is required"),
+  // mobileno: yup
+  //   .string()
+  //   .matches(phoneRegExp, "Mobile Number is invalid")
+  //   // .test("Only 10 number", (value) => value.length === 10)
+  //   .required("number is required")
+  //   .required("Mobile Number is required"),
 });
 
 module.exports = {

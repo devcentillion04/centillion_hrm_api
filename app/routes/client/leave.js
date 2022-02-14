@@ -1,21 +1,17 @@
 const express = require("express");
 const LeaveController = require("../../controllers/client/v1/leave");
 const router = express.Router();
-const { validate, leaveSchema } = require("../../middleware/validation");
-// const auth = require("../../middleware/authorization");
+const auth = require("../../middleware/authorization");
 
-router.post(
-  "/applyLeave/:id",
-  [validate(leaveSchema.leave)],
-  LeaveController.applyLeave
-);
-router.get("/:id", LeaveController.show);
-router.get("/", LeaveController.index);
+
+router.get("/", [auth], LeaveController.index);
+router.post("/applyleave/:id", [auth], LeaveController.applyLeave);
 router.put("/update/:id", LeaveController.update); //update leave data
-router.put("/cancelLeave/:id", LeaveController.cancelLeave); //cancel leave
-router.put("/approveLeave/:id", LeaveController.approveLeave); //approve leave
-router.put("/rejectLeave/:id", LeaveController.rejectLeave); //reject leave
-router.get("/getLeaveData/:id", LeaveController.getLeaveData); //get leave data
-router.post("/publicHolidayList", LeaveController.publicHolidayList); //get all public holiday list
-router.post("/getUpcomingLeaves/:userId", LeaveController.getUpcomingLeaves);
+router.put("/cancelleave/:id", LeaveController.cancelLeave); //cancel leave
+router.put("/approveleave/:id", LeaveController.approveLeave); //approve leave
+router.put("/rejectleave/:id", LeaveController.rejectLeave); //reject leave
+router.get("/getleavedata/:id", LeaveController.getLeaveData); //get leave data
+router.get("/test/publicholidaylist", LeaveController.publicHolidayList); //get all public holiday list
+router.get("/leaves/getupcomingleaves", [auth], LeaveController.getUpcomingLeaves);
+router.get("/all/overviewDetails", [auth], LeaveController.overviewDetails); //get leave data
 module.exports = router;

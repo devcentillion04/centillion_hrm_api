@@ -4,17 +4,23 @@ const Schema = mongoose.Schema;
 
 const holidaySchema = new Schema(
   {
-    holidayList: {
-      type: Schema.Types.Mixed,
-    },
+    holidayList: [
+      {
+        holidayName: {
+          type: String,
+        },
+        holidayDate: {
+          type: Date,
+        },
+      },
+    ],
     isDeleted: {
       type: Boolean,
       default: false,
     },
     year: {
       type: String,
-      required: true,
-    },
+    }
   }
   // { timestamps: true, toJSON: { virtuals: true } }
 );

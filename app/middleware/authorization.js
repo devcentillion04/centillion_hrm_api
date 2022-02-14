@@ -13,6 +13,7 @@ const authorization = async (req, res, next) => {
 		const verifyToken = verifyJWT(token);
 		if (!verifyToken) throw new Error('Invalid Token');
 
+		console.log('verifyToken', req.path);
 		const user = await UserSchema.findOne({ _id: verifyToken.sub });
 		if (!user) throw new Error('No User Found With That Token');
 
@@ -24,4 +25,4 @@ const authorization = async (req, res, next) => {
 	}
 };
 
-module.exports=authorization
+module.exports = authorization

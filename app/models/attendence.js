@@ -26,6 +26,7 @@ const AttendanceSchema = new Schema(
     },
     clockOut: {
       type: Date,
+      default: null
     },
     totalHours: {
       type: Number,
