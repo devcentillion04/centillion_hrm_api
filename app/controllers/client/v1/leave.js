@@ -565,13 +565,15 @@ class LeaveController {
         clockIn: 1
       });
       let data = await getTotalWorkingDays(currentYear);
+      let userList = await UserSchema.find({ isDeleted: false })
       let resData = {
         holidayList: holidayList && holidayList[0].holidayList ? holidayList && holidayList[0].holidayList : holidayList,
         pendingLeaveListCount: pendingLeaveList.length,
         approveList: approveList.length,
         totalAttendance: currentMonthAttendance.length,
         totalDaysInMonth: data.totalDaysInMonth,
-        actualWorkingDaysInMonth: data.actualWorkingDaysInMonth
+        actualWorkingDaysInMonth: data.actualWorkingDaysInMonth,
+        userList: userList && userList?.length
       }
       return res.status(200).json({
         success: true,

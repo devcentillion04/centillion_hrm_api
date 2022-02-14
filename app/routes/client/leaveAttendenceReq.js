@@ -1,5 +1,5 @@
 const express = require("express");
-const leaveAttendenceReqController = require("../../controllers/client/v1/leaveAttendenceReq");
+const leaveAttendenceReqController = require("../../controllers/client/v1/leaveattendencereq");
 const router = express.Router();
 const { validate } = require("../../middleware/validation");
 const auth = require("../../middleware/authorization");
@@ -12,4 +12,5 @@ router.get("/test/getAllPendingRequest", auth, leaveAttendenceReqController.getA
 router.put("/delete/:id", leaveAttendenceReqController.delete);
 router.put("/rejectRequest/:id", auth, leaveAttendenceReqController.rejectRequest);
 router.get("/getleaveattandanceData/:id", auth, leaveAttendenceReqController.getDataById);
+
 module.exports = router;

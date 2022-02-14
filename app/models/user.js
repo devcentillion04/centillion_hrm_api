@@ -113,6 +113,24 @@ const UserSchema = new Schema(
       type: mongoose.Types.ObjectId,
       ref: "User",
     },
+    paymentMode: {
+      type: String
+    },
+    bankName: {
+      type: String
+    },
+    IFSCCode: {
+      type: String
+    },
+    bankAccountNo: {
+      type: Number
+    },
+    PANCard: {
+      type: String
+    },
+    grossSalary: {
+      type: Number
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
