@@ -2,6 +2,7 @@ let moment = require("moment-timezone");
 const commonFunction = require("../../../common/function");
 const { salarySlipManagement } = require("../../../models/salarySlip");
 let salaryLogs = commonFunction.fileLogs("salarySlip");
+const { CONSTANTS } = require("../../../constants/index.js");
 let fs = require("fs");
 let path = require("path");
 class salarySlipController {
@@ -14,37 +15,41 @@ class salarySlipController {
     async uploadSalarySlip(req, res) {
         try {
             let file = req.files.files;
-            if (file.type && file.type == "application/pdf") {
-                let lastIndex = file.path.lastIndexOf("/");
-                let filepath = file.path.substring(parseInt(lastIndex) + 1);
-                let updatedFileName = file.originalFilename.split('.').join('-' + moment() + '.');
-                let newPath = file.path.replace(filepath, updatedFileName);
-                newPath = path.join(__dirname, '../../../../upload/salarySlip/') + newPath;
-                fs.rename(file.path, newPath, async (error) => {
-                    if (error) {
-                        salaryLogs.error("Error while rename salary slip file :-" + JSON.stringify(error));
-                        return res.status(500).json({ success: false, message: error.message });
-                    } else {
-                        let bufferData = fs.readFileSync(newPath);
-                        let reqData = {
-                            fileName: updatedFileName,
-                            fileSize: file.size,
-                            contentType: file.type,
-                            base64Data: bufferData.toString('base64'),
-                            originalFileName: file.path
+            if (file && file.size <= CONSTANTS.MAX_FILE_SIZE.pdfFile) {
+                if (file.type && file.type == "application/pdf") {
+                    let lastIndex = file.path.lastIndexOf("/");
+                    let filepath = file.path.substring(parseInt(lastIndex) + 1);
+                    let updatedFileName = file.originalFilename.split('.').join('-' + moment() + '.');
+                    let newPath = file.path.replace(filepath, updatedFileName);
+                    newPath = path.join(__dirname, '../../../../upload/salarySlip/') + newPath;
+                    fs.rename(file.path, newPath, async (error) => {
+                        if (error) {
+                            salaryLogs.error("Error while rename salary slip file :-" + JSON.stringify(error));
+                            return res.status(500).json({ success: false, message: error.message });
+                        } else {
+                            let bufferData = fs.readFileSync(newPath);
+                            let reqData = {
+                                fileName: updatedFileName,
+                                fileSize: file.size,
+                                contentType: file.type,
+                                base64Data: bufferData.toString('base64'),
+                                originalFileName: file.path
+                            }
+                            let salaryData = new salarySlipManagement({
+                                fileData: reqData.base64Data,
+                                fileName: reqData.fileName,
+                                userId: req.body.userId,
+                                filePath: newPath
+                            });
+                            await salaryData.save(); //create leave document
+                            return res.status(200).json({ success: true, message: "Successfully file uploaded", data: salaryData });
                         }
-                        let salaryData = new salarySlipManagement({
-                            fileData: reqData.base64Data,
-                            fileName: reqData.fileName,
-                            userId: req.body.userId,
-                            filePath: newPath
-                        });
-                        await salaryData.save(); //create leave document
-                        return res.status(200).json({ success: true, message: "Successfully file uploaded", data: salaryData });
-                    }
-                });
+                    });
+                } else {
+                    return res.status(500).json({ success: false, message: "File content-type must be have pdf" });
+                }
             } else {
-                return res.status(500).json({ success: false, message: "File content-type must be have pdf" });
+                return res.status(500).json({ success: false, message: "file size too large" });
             }
         } catch (error) {
             salaryLogs.error("Error while upload salary slip file :-" + JSON.stringify(error));
