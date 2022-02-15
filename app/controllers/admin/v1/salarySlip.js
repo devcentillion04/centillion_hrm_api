@@ -15,41 +15,44 @@ class salarySlipController {
     async uploadSalarySlip(req, res) {
         try {
             let file = req.files.files;
-            if (file && file.size <= CONSTANTS.MAX_FILE_SIZE.pdfFile) {
-                if (file.type && file.type == "application/pdf") {
-                    let lastIndex = file.path.lastIndexOf("/");
-                    let filepath = file.path.substring(parseInt(lastIndex) + 1);
-                    let updatedFileName = file.originalFilename.split('.').join('-' + moment() + '.');
-                    let newPath = file.path.replace(filepath, updatedFileName);
-                    newPath = path.join(__dirname, '../../../../upload/salarySlip/') + newPath;
-                    fs.rename(file.path, newPath, async (error) => {
-                        if (error) {
-                            salaryLogs.error("Error while rename salary slip file :-" + JSON.stringify(error));
-                            return res.status(500).json({ success: false, message: error.message });
-                        } else {
-                            let bufferData = fs.readFileSync(newPath);
-                            let reqData = {
-                                fileName: updatedFileName,
-                                fileSize: file.size,
-                                contentType: file.type,
-                                base64Data: bufferData.toString('base64'),
-                                originalFileName: file.path
-                            }
-                            let salaryData = new salarySlipManagement({
-                                fileData: reqData.base64Data,
-                                fileName: reqData.fileName,
-                                userId: req.body.userId,
-                                filePath: newPath
-                            });
-                            await salaryData.save(); //create leave document
-                            return res.status(200).json({ success: true, message: "Successfully file uploaded", data: salaryData });
-                        }
-                    });
-                } else {
-                    return res.status(500).json({ success: false, message: "File content-type must be have pdf" });
-                }
+            if (file && file.size <= CONSTANTS.MAX_FILE_SIZE.pdfFile && file.type && file.type == "application/pdf") {
+                let lastIndex = file.path.lastIndexOf("/");
+                let filepath = file.path.substring(parseInt(lastIndex) + 1);
+                let updatedFileName = file.originalFilename.split('.').join('-' + moment() + '.');
+                let newPath = file.path.replace(filepath, updatedFileName);
+                newPath = path.join(__dirname, '../../../../upload/salarySlip/') + newPath;
+                fs.rename(file.path, newPath, async (error) => {
+                    if (error) {
+                        salaryLogs.error("Error while rename salary slip file :-" + JSON.stringify(error));
+                        return res.status(500).json({ success: false, message: error.message });
+                    } else {
+                        let bufferData = fs.readFileSync(newPath);
+                        let salaryData = new salarySlipManagement({
+                            fileData: bufferData.toString('base64'),
+                            fileName: updatedFileName,
+                            userId: req.body.userId,
+                            filePath: newPath,
+                            fileSize: file.size,
+                            contentType: file.type
+                        });
+                        await salaryData.save(); //create leave document
+                        return res.status(200).json({ success: true, message: "Successfully file uploaded", data: salaryData });
+                    }
+                });
             } else {
-                return res.status(500).json({ success: false, message: "file size too large" });
+                let errorMsg = "";
+                if (file.type !== 'application/pdf') {
+                    errorMsg = "File content-type must be have pdf"
+                } else {
+                    errorMsg = "file size too large"
+                }
+                if (file.path) {
+                    fs.unlink(file.path, (err) => {
+                        if (err) throw err;
+                        salaryLogs.info("FileName :- " + file.path + "File Deleted Successfully,salarySlip File ID :-" + req.params.id,);
+                    });
+                }
+                return res.status(500).json({ success: false, message: errorMsg });
             }
         } catch (error) {
             salaryLogs.error("Error while upload salary slip file :-" + JSON.stringify(error));
@@ -67,6 +70,13 @@ class salarySlipController {
         try {
             let fileList = await salarySlipManagement.find({
                 isDeleted: false
+            }, {
+                isDeleted: 1,
+                filePath: 1,
+                fileName: 1,
+                userId: 1,
+                createdAt: 1,
+                updatedAt: 1
             });
             return res.status(200).json({ success: true, message: "Successfully get all documents", data: fileList });
         } catch (error) {
@@ -89,6 +99,14 @@ class salarySlipController {
                 isDeleted: false
             }, {
                 isDeleted: true
+            }, {
+                "fields":
+                {
+                    isDeleted: 1,
+                    filePath: 1,
+                    fileName: 1,
+                    userId: 1
+                }
             });
             //remove file
             if (fileData.filePath) {
