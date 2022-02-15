@@ -3,6 +3,7 @@ const commonFunction = require("../../../common/function");
 const { salarySlipManagement } = require("../../../models/salarySlip");
 let salaryLogs = commonFunction.fileLogs("salarySlip");
 let fs = require("fs");
+let path = require("path");
 class salarySlipController {
     /**
      * Upload salarySlip & create document
@@ -18,6 +19,7 @@ class salarySlipController {
                 let filepath = file.path.substring(parseInt(lastIndex) + 1);
                 let updatedFileName = file.originalFilename.split('.').join('-' + moment() + '.');
                 let newPath = file.path.replace(filepath, updatedFileName);
+                newPath = path.join(__dirname, '../../../../upload/salarySlip/') + newPath;
                 fs.rename(file.path, newPath, async (error) => {
                     if (error) {
                         salaryLogs.error("Error while rename salary slip file :-" + JSON.stringify(error));
