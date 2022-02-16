@@ -1,7 +1,11 @@
 const { UserSchema } = require("../../../models/user");
 const moment = require("moment");
 const { hashSync, genSaltSync, compare } = require("bcrypt");
-const { Types } = require("mongoose");
+const commonFunction = require("../../../common/function");
+let userLogs = commonFunction.fileLogs("UserLogs");
+const path = require("path");
+const fs = require("fs");
+
 class UserController {
   async index(req, res) {
     let sort_key = req.query.sort_key || "name";
@@ -183,6 +187,55 @@ class UserController {
     }
   }
 
+  /**
+   * Upload profile picture
+   * @param {*} req 
+   * @param {*} res 
+   * @returns 
+   */
+  async uploadProfile(req, res) {
+    try {
+      userLogs.info("uploadProfile Api Call,Current UserId :- " + req.currentUser._id);
+      let imageBase64Data = req.body.image;
+      let fileName = req.currentUser._id;
+      let imageResponse = await asyncBase64FileUpload(imageBase64Data, fileName,);
+      let path = "/profile/" + imageResponse.fileName;
+      await UserSchema.updateOne({
+        _id: req.currentUser._id,
+        isDeleted: false
+      }, {
+        profile: path
+      });
+      userLogs.info("Successfully Profile Photo Uploaded" + imageResponse.fileName);
+      return res.status(200).json({ success: true, data: imageResponse, message: "Successfully Profile uploaded" });
+    } catch (error) {
+      userLogs.error("Error while uploading profile photo,CUrrentUserId :-" + req.body.id + "Error :-" + error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+}
+
+const asyncBase64FileUpload = (imgData, imageName) => {
+  return new Promise(resolve => {
+    let type = imgData.split(';')[0].split('/')[1];
+    let data = imgData.replace(/^data:image\/\w+;base64,/, "");
+    let buf = new Buffer(data, 'base64');
+    const imagePath = path.join(__dirname, '../../../../upload/profilePicture/' + "/");
+    let fileP = imagePath;
+    if (!fs.existsSync(fileP)) {
+      fs.mkdirSync(fileP, { recursive: true });
+    }
+    let filePath = `${fileP}${imageName}.${type}`;
+    fs.writeFile(filePath, buf, function (err) {
+      if (err) {
+        resolve({ status: false, fileName: "", message: 'Profile image not uploaded!', code: 404 })
+      } else {
+        let fileName = `${imageName}.${type}`;
+        resolve({ status: true, fileName: fileName, filePath: filePath, message: "Profile Uploaded SuccessFully", code: 200 });
+      }
+    });
+  });
 }
 
 module.exports = new UserController();
