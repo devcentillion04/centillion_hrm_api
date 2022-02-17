@@ -116,18 +116,6 @@ const UserSchema = new Schema(
     paymentMode: {
       type: String
     },
-    bankName: {
-      type: String
-    },
-    IFSCCode: {
-      type: String
-    },
-    bankAccountNo: {
-      type: Number
-    },
-    PANCard: {
-      type: String
-    },
     grossSalary: {
       type: Number
     },
