@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start:test": "DOTENV_CONFIG_PATH=.env.test nodemon server.js",
-    "prod": "DOTENV_CONFIG_PATH=.env.prod nodemon server.js",
+    "start:prod": "DOTENV_CONFIG_PATH=.env.prod nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
