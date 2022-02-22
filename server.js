@@ -22,13 +22,14 @@ const clientRoutes = require("./app/routes");
 const adminRoutes = require("./app/routes/admin");
 const app = express();
 const router = express.Router();
-app.use(json());
-app.use(urlencoded({ extended: true }));
+
+app.use(json({ limit: '50mb' }));
+app.use(urlencoded({ limit: '50mb', extended: true }));
 app.use(morgan("dev"));
 app.use(cors());
 app.use(`/api/${process.env.VERSION}`, router);
-app.use(express.static("public"));
-
+app.use(express.static("public"))
+app.use("/profile", express.static("upload/profilePicture"));
 router.use("/admin", adminRoutes);
 router.use("/", clientRoutes);
 

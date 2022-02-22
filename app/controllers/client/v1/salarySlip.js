@@ -15,6 +15,13 @@ class salarySlipController {
             let list = await salarySlipManagement.find({
                 userId: req.currentUser._id,
                 isDeleted: false
+            }, {
+                isDeleted: 1,
+                filePath: 1,
+                fileName: 1,
+                userId: 1,
+                createdAt: 1,
+                updatedAt: 1
             });
             return res.status(200).json({ success: true, message: "Successfully get all documents", data: list });
         } catch (error) {

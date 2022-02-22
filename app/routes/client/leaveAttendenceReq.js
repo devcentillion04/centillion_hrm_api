@@ -6,7 +6,7 @@ const auth = require("../../middleware/authorization");
 
 router.get("/", auth, leaveAttendenceReqController.index);
 router.post("/create", auth, leaveAttendenceReqController.create);
-router.put("/update/:id", leaveAttendenceReqController.update);
+router.put("/update/:id", auth, leaveAttendenceReqController.update);
 router.put("/approve/:id", auth, leaveAttendenceReqController.approve);
 router.get("/test/getAllPendingRequest", auth, leaveAttendenceReqController.getAllPendingRequest);
 router.put("/delete/:id", leaveAttendenceReqController.delete);
