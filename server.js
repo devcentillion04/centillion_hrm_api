@@ -3,7 +3,7 @@ const { json, urlencoded } = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const fs = require('fs');
-// require("./app/cronJob/clockout");
+require("./app/cronJob/clockout");
 // require("./app/cronJob/attendanceMail");
 if (!fs.existsSync("./logs")) {
   fs.mkdirSync("./logs");
