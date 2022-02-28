@@ -5,16 +5,17 @@ const Attendance = require("../models/attendence");
 const mongoose = require("mongoose");
 cron.schedule("0 23 * * * *", async () => {
     try {
-        let id = mongoose.Types.ObjectId("61e961bac72bbf8269a07974");
         let users = await UserSchema.find();
-        console.log("test")
+        console.log("test", users)
         for (let i = 0; i < users.length; i++) {
             console.log("update")
             let todayDate = moment().startOf("day").toISOString();
             let attendeesRecord = await Attendance.findOne({
-                user: id,
+
+                user: users[i]._id,
                 createdAt: { $gt: new Date(todayDate) },
             });
+            console.log('attendeesRecord', attendeesRecord)
             if (!attendeesRecord?.clockOut) {
                 if (!attendeesRecord.entry[attendeesRecord.entry.length - 1]?.out) {
                     let out = {
