@@ -6,21 +6,26 @@ const Schema = mongoose.Schema;
 
 const TimeSheetSchema = new Schema(
     {
-        ProjectId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "projects",
-            required: true,
-        },
-        workingHrs: {
-            type: Number,
-            required: true,
-        },
+        projects: [
+            {
+                ProjectId: {
+                    type: Schema.Types.ObjectId,
+                    ref: "projects",
+                    required: true,
+                },
+                workingHrs: {
+                    type: String,
+                    required: true,
+                },
+            }
+        ],
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
         },
 
     },
+
     { timestamps: true, toJSON: { virtuals: true } }
 );
 TimeSheetSchema.plugin(paginate);

@@ -42,9 +42,9 @@ class TaskController {
                 whereCluse = { ...whereCluse, _id: query.id }
             }
             if (query.projectId) {
-                whereCluse = { ...whereCluse, ProjectId: query.projectId }
+                whereCluse = { ...whereCluse, projectId: query.projectId }
             }
-            const result = await TimeSheetSchema.find({ whereCluse }).populate("ProjectId").populate("userId")
+            const result = await TimeSheetSchema.find({ whereCluse }).populate({ path: "projects.ProjectId" }).populate("userId")
             return res.status(200).json({ success: true, data: result })
         } catch (error) {
             console.log(error)
