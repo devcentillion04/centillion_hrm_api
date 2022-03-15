@@ -238,7 +238,7 @@ class AttendanceController {
         payload = {
           ...payload,
           entry: attendance_entries,
-          workingHours: Number(existing_attendance.workingHours)+ minutes,
+          workingHours: Number(existing_attendance.workingHours) + minutes,
         };
       } else {
         payload = {
@@ -312,11 +312,21 @@ class AttendanceController {
       let criteria = {
         userId: loggedInUser._id,
       };
-
+      let { sortField, sortValue } = req.query;
+      let sort = {};
+      if (sortField) {
+        sort = {
+          [sortField]: sortValue === "ASC" ? 1 : -1,
+        };
+      } else {
+        sort = {
+          createdAt: -1,
+        };
+      }
       let options = {
         page: page,
         limit: limit,
-        [sort_key]: sort_direction,
+        sort: { createdAt: -1 },
         populate: { path: "userId" },
       };
 
@@ -324,8 +334,8 @@ class AttendanceController {
         req.query.page || req.query.limit
           ? await Attendance.paginate(criteria, options)
           : await Attendance.find(criteria).sort({
-            [sort_key]: sort_direction,
-          });
+            createdAt: -1,
+          })
 
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
