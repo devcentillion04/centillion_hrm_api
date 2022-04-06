@@ -1,5 +1,6 @@
 const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
+const AttendancePartTime = require("../../../models/attendence-tarine");
 
 class AttendanceController {
   async index(req, res) {
@@ -213,47 +214,96 @@ class AttendanceController {
       };
       let payload = {};
 
-      let existing_attendance = await Attendance.findOne(criteria);
-      if (existing_attendance) {
-        let attendance_entries = existing_attendance.entry;
-        let last_attendance_entry =
-          attendance_entries[attendance_entries.length - 1];
-        if (last_attendance_entry?.In && last_attendance_entry?.Out) {
-          let entry_payload = {
-            In: moment().utc(true).toISOString(),
+      let existing_attendance;
+      if (loggedInUser.employeeType === "FULLTIME") {
+        existing_attendance = await Attendance.findOne(criteria);
+        if (existing_attendance) {
+          let attendance_entries = existing_attendance.entry;
+          let last_attendance_entry =
+            attendance_entries[attendance_entries.length - 1];
+          if (last_attendance_entry?.In && last_attendance_entry?.Out) {
+            let entry_payload = {
+              In: moment().utc(true).toISOString(),
+            };
+            attendance_entries.push(entry_payload);
+          } else {
+            last_attendance_entry.Out = moment().utc(false).toISOString();
+            Object.assign(payload, {
+              clockOut: moment().utc(true).toISOString(),
+            });
+          }
+
+          let minutes = moment(last_attendance_entry.Out).diff(
+            last_attendance_entry.In,
+            "minutes"
+          );
+
+          payload = {
+            ...payload,
+            entry: attendance_entries,
+            workingHours: Number(existing_attendance.workingHours) + minutes,
           };
-          attendance_entries.push(entry_payload);
         } else {
-          last_attendance_entry.Out = moment().utc(false).toISOString();
-          Object.assign(payload, {
-            clockOut: moment().utc(true).toISOString(),
-          });
+          payload = {
+            ...criteria,
+            clockIn: moment().utc(true).toISOString(),
+            entry: {
+              In: moment().utc(true).toISOString(),
+            },
+          };
         }
-
-        let minutes = moment(last_attendance_entry.Out).diff(
-          last_attendance_entry.In,
-          "minutes"
-        );
-
-        payload = {
-          ...payload,
-          entry: attendance_entries,
-          workingHours: Number(existing_attendance.workingHours) + minutes,
-        };
       } else {
-        payload = {
-          ...criteria,
-          clockIn: moment().utc(true).toISOString(),
-          entry: {
-            In: moment().utc(true).toISOString(),
-          },
-        };
+        existing_attendance = await AttendancePartTime.findOne(criteria);
+        if (existing_attendance) {
+          let attendance_entries = existing_attendance.entry;
+          let last_attendance_entry =
+            attendance_entries[attendance_entries.length - 1];
+          if (last_attendance_entry?.In && last_attendance_entry?.Out) {
+            let entry_payload = {
+              In: moment().utc(true).toISOString(),
+            };
+            attendance_entries.push(entry_payload);
+          } else {
+            last_attendance_entry.Out = moment().utc(false).toISOString();
+            Object.assign(payload, {
+              clockOut: moment().utc(true).toISOString(),
+            });
+          }
+
+          let minutes = moment(last_attendance_entry.Out).diff(
+            last_attendance_entry.In,
+            "minutes"
+          );
+
+          payload = {
+            ...payload,
+            entry: attendance_entries,
+            workingHours: Number(existing_attendance.workingHours) + minutes,
+          };
+        } else {
+          payload = {
+            ...criteria,
+            clockIn: moment().utc(true).toISOString(),
+            entry: {
+              In: moment().utc(true).toISOString(),
+            },
+          };
+        }
       }
 
-      let attendance = await Attendance.findOneAndUpdate(criteria, payload, {
-        upsert: true,
-        new: true,
-      }).lean();
+      let attendance;
+
+      if (loggedInUser.employeeType === "FULLTIME") {
+        attendance = await Attendance.findOneAndUpdate(criteria, payload, {
+          upsert: true,
+          new: true,
+        }).lean();
+      } else {
+        attendance = await AttendancePartTime.findOneAndUpdate(criteria, payload, {
+          upsert: true,
+          new: true,
+        }).lean();
+      }
 
       let last_attendance_entry = attendance?.entry.length
         ? attendance?.entry[attendance?.entry.length - 1]
@@ -271,6 +321,7 @@ class AttendanceController {
 
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
+      console.log('error', error)
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -283,7 +334,12 @@ class AttendanceController {
         workDate: moment().startOf("day").utc(true).toISOString(),
       };
 
-      let attendance = await Attendance.findOne(criteria).lean();
+      let attendance;
+      if (loggedInUser.employeeType === "FULLTIME") {
+        attendance = await Attendance.findOne(criteria).lean();
+      } else {
+        attendance = await AttendancePartTime.findOne(criteria).lean();
+      }
       let last_attendance_entry = attendance?.entry.length
         ? attendance?.entry[attendance?.entry.length - 1]
         : null;
@@ -330,13 +386,20 @@ class AttendanceController {
         populate: { path: "userId" },
       };
 
-      let all_attendance =
-        req.query.page || req.query.limit
+      let all_attendance;
+      if (loggedInUser.employeeType === "FULLTIME") {
+        all_attendance = req.query.page || req.query.limit
           ? await Attendance.paginate(criteria, options)
           : await Attendance.find(criteria).sort({
             createdAt: -1,
           })
-
+      } else {
+        all_attendance = req.query.page || req.query.limit
+          ? await AttendancePartTime.paginate(criteria, options)
+          : await AttendancePartTime.find(criteria).sort({
+            createdAt: -1,
+          })
+      }
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
