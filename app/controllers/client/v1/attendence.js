@@ -278,7 +278,7 @@ class AttendanceController {
           payload = {
             ...payload,
             entry: attendance_entries,
-            workingHours: Number(existing_attendance.workingHours) + minutes,
+            workingHours: minutes > 240 ? 240 : Number(existing_attendance.workingHours) + minutes > 240 ? 240 : minutes,
           };
         } else {
           payload = {
