@@ -17,6 +17,9 @@ const TimeSheetSchema = new Schema(
                     type: String,
                     required: true,
                 },
+                workDate: {
+                    type: Date,
+                },
             }
         ],
         userId: {

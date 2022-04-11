@@ -1,7 +1,8 @@
 const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
 const AttendancePartTime = require("../../../models/attendence-tarine");
-
+const commonFunction = require("../../../common/function");
+const { query } = require("express");
 class AttendanceController {
   async index(req, res) {
     try {
@@ -122,7 +123,8 @@ class AttendanceController {
       } else {
         user = { ...req.params._id };
       }
-      let { page, limit, sortField, sortValue } = req.query;
+      let { page, limit, sortField, sortValue, workDate } = req.query;
+
       let sort = {};
       let whereClause = {};
       if (sortField) {
@@ -131,14 +133,33 @@ class AttendanceController {
         };
       } else {
         sort = {
-          name: 1,
+          createdAt: -1,
         };
       }
+      if (workDate) {
+        let date = moment(workDate).toISOString();
+        let endOfMonth = moment(workDate).endOf('month').toISOString();
+        whereClause = {
+          userId: user.userId,
+        };
+        whereClause["workDate"] = {
+          $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
+          $lte: commonFunction.getUtcTime(endOfMonth, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
+        };
+        var dataDate =
+        {
+          $match: whereClause,
+        }
+      } else {
+        whereClause = { ...whereClause };
+      }
 
-      let attendence = await Attendance.find(user, whereClause)
+      let attendence = await Attendance.find({ ...user, ...whereClause })
         .skip(page > 0 ? +limit * (+page - 1) : 0)
         .limit(+limit || 20)
-        .sort(sort)
+        .sort({
+          createdAt: -1,
+        })
         .populate({
           path: "userId",
           select: ["firstname", "lastname", "email", "profile"],
@@ -148,6 +169,7 @@ class AttendanceController {
         data: attendence.docs ? attendence.docs : attendence,
       });
     } catch (error) {
+      console.log('error', error)
       return res.status(500).json({ success: false, message: error.message });
     }
   }

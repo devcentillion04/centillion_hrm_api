@@ -58,7 +58,7 @@ class LeaveController {
 
     return res
       .status(200)
-      .json({ success: true, data: leave.docs ? leave.docs : leave });
+      .json({ success: true, data: leave });
   }
 
   /**
