@@ -249,22 +249,38 @@ class AttendanceController {
             };
             attendance_entries.push(entry_payload);
           } else {
-            last_attendance_entry.Out = moment().utc(false).toISOString();
+            last_attendance_entry.Out = moment().utc(true).toISOString();
             Object.assign(payload, {
               clockOut: moment().utc(true).toISOString(),
             });
           }
 
-          let minutes = moment(last_attendance_entry.Out).diff(
-            last_attendance_entry.In,
-            "minutes"
-          );
+          let lastEntry = attendance_entries[attendance_entries.length - 1]
 
-          payload = {
-            ...payload,
-            entry: attendance_entries,
-            workingHours: Number(existing_attendance.workingHours) + minutes,
-          };
+          console.log('lastEmntry.out', lastEntry.Out)
+          if (lastEntry.Out) {
+            let minutes = moment(lastEntry.Out).diff(
+              lastEntry.In,
+              "minutes"
+            );
+            console.log('minutes', minutes)
+
+            console.log('attendance_entries', attendance_entries[attendance_entries.length - 1].out === undefined)
+            payload = {
+              ...payload,
+              entry: attendance_entries,
+              workingHours: Number(existing_attendance.workingHours) + minutes
+            };
+          }
+          else {
+
+            payload = {
+              ...payload,
+              entry: attendance_entries,
+              workingHours: Number(existing_attendance.workingHours)
+            };
+          }
+
         } else {
           payload = {
             ...criteria,
@@ -315,11 +331,13 @@ class AttendanceController {
 
       let attendance;
 
+      console.log('payloa11111d', payload)
+      console.log('criteria', criteria)
       if (loggedInUser.employeeType === "FULLTIME") {
         attendance = await Attendance.findOneAndUpdate(criteria, payload, {
           upsert: true,
           new: true,
-        }).lean();
+        }).lean()
       } else {
         attendance = await AttendancePartTime.findOneAndUpdate(criteria, payload, {
           upsert: true,
