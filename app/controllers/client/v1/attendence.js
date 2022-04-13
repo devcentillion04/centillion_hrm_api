@@ -331,8 +331,6 @@ class AttendanceController {
 
       let attendance;
 
-      console.log('payloa11111d', payload)
-      console.log('criteria', criteria)
       if (loggedInUser.employeeType === "FULLTIME") {
         attendance = await Attendance.findOneAndUpdate(criteria, payload, {
           upsert: true,
