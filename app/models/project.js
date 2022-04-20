@@ -7,6 +7,16 @@ const projectSchema = new Schema(
     projectName: {
       type: String,
     },
+    employeeId: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+    },
+    projectStartDate: {
+      type: Date,
+    },
+    projectEndDate: {
+      type: Date,
+    },
     technology: {
       type: Array,
     },

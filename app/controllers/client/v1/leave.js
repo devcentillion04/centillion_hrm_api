@@ -479,6 +479,37 @@ class LeaveController {
     }
   }
 
+  async getAdminUpcomingLeaves(req, res) {
+    try {
+      let date = moment();
+      leavesLogs.info("Request data of getUpcomingLeaves api " + req.currentUser._id);
+      let condition = {
+        isDeleted: {
+          $ne: true,
+        },
+      };
+      condition["leaveFrom"] = {
+        $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
+      };
+
+      let query = [
+        {
+          $match: condition,
+        },
+      ];
+      let data = await LeavesManagement.aggregate(query).allowDiskUse(true);
+
+      return res.status(200).json({
+        success: true,
+        data: data,
+        message: "",
+      });
+    } catch (error) {
+      leavesLogs.error("Error while process getUpcomingLeaves api" + JSON.stringify(error));
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   /**
    * Get upcoming holidayList
    * @param {*} req 
@@ -565,14 +596,15 @@ class LeaveController {
         clockIn: 1
       });
       let data = await getTotalWorkingDays(currentYear);
-      let userList = await UserSchema.find({ isDeleted: false })
+      let userList = await UserSchema.find({ isDeleted: false });
+      let all_attendance = await Attendance.find({ workDate: moment().startOf("day").utc(true) })
       let resData = {
         holidayList: holidayList && holidayList[0].holidayList ? holidayList && holidayList[0].holidayList : holidayList,
-        pendingLeaveListCount: pendingLeaveList.length,
-        approveList: approveList.length,
-        totalAttendance: currentMonthAttendance.length,
-        totalDaysInMonth: data.totalDaysInMonth,
-        actualWorkingDaysInMonth: data.actualWorkingDaysInMonth,
+        pendingLeaveListCount: pendingLeaveList?.length,
+        approveList: approveList?.length,
+        totalAttendance: all_attendance?.length,
+        totalDaysInMonth: data?.totalDaysInMonth,
+        actualWorkingDaysInMonth: data?.actualWorkingDaysInMonth,
         userList: userList && userList?.length
       }
       return res.status(200).json({

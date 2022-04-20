@@ -44,7 +44,7 @@ class TaskController {
             if (query.projectId) {
                 whereCluse = { ...whereCluse, projectId: query.projectId }
             }
-            const result = await TimeSheetSchema.find({ whereCluse }).populate({ path: "projects.ProjectId" }).populate("userId")
+            const result = await TimeSheetSchema.find({ whereCluse }).populate({ path: "projects.ProjectId" }).populate("userId").sort({ createdAt: -1 })
             return res.status(200).json({ success: true, data: result })
         } catch (error) {
             console.log(error)

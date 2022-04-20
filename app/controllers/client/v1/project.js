@@ -20,13 +20,15 @@ class projectController {
       limit: req.query.limit || 10,
       sort: { [sort_key]: sort_direction },
     };
+    criteria = { ...criteria, isDeleted: false };
 
     let project =
       req.query.page || req.query.limit
         ? await projectSchema.paginate(criteria, options)
         : await projectSchema
-            .find(criteria)
-            .sort({ [sort_key]: sort_direction });
+          .find(criteria)
+          .sort({ [sort_key]: sort_direction })
+          .populate({ path: "employeeId", select: ["firstname", "lastname", "email", "profile"] })
 
     return res.status(200).json({ success: true, data: project });
   }
@@ -45,9 +47,10 @@ class projectController {
   async show(req, res) {
     try {
       let criteria = {
-        isDeleted: true,
+        isDeleted: false,
       };
       let project = await projectSchema.findById(req.params.id, criteria);
+      console.log('project', project)
       return res.status(200).json({ success: true, data: project });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
