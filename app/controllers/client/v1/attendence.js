@@ -113,10 +113,10 @@ class AttendanceController {
       return res.status(500).json({ success: false, message: error.message });
     }
   }
-  catch(error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-  async  (req, res) {
+  // catch(error) {
+  //   return res.status(500).json({ success: false, message: error.message });
+  // }
+  async show(req, res) {
     try {
       let { id } = req.params;
       let user = {};
@@ -175,7 +175,7 @@ class AttendanceController {
         });
       return res.status(200).json({
         success: true,
-        data: attendence.docs ? attendence.docs : attendence,
+        data: attendence,
       });
     } catch (error) {
       console.log("error", error);
@@ -203,12 +203,7 @@ class AttendanceController {
   }
   async userAttendence(req, res) {
     try {
-      console.log(
-        "new Date().toLocaleDateString()",
-        new Date().toLocaleDateString()
-      );
       var todayDate = new Date().toISOString().slice(0, 10);
-      console.log("todayDate", todayDate);
       // const userData = await UserSchema.aggregate([
 
       //   {
@@ -246,26 +241,7 @@ class AttendanceController {
         employeeType: "FULLTIME",
       });
       var data = [];
-      for (let i = 0; i < userData.length; i++) {
-        console.log("userData[i]._id", userData[i]._id);
-        let attendence = await Attendance.findOne({
-          userId: userData[i]._id,
-          createdAt: {
-            $gt: commonFunction.getUtcTime(
-              todayDate,
-              commonFunction.timezone,
-              "YYYY/MM/DD HH:mm:ss"
-            ),
-          },
-        });
 
-        data.push({
-          userData: userData[i],
-          attendence: attendence,
-          leavData: leavData,
-        });
-      }
-      console.log("data", data);
 
       let payload = {
         workDate: moment().startOf("day").utc(true),
@@ -282,7 +258,31 @@ class AttendanceController {
           name: 1,
         };
       }
+      for (let i = 0; i < userData.length; i++) {
+        console.log("userData[i]._id", userData[i]._id);
+        let attendence = await Attendance.findOne({
+          userId: userData[i]._id,
+          createdAt: {
+            $gt: commonFunction.getUtcTime(
+              todayDate,
+              commonFunction.timezone,
+              "YYYY/MM/DD HH:mm:ss"
+            ),
+          },
+        }).skip(page > 0 ? +limit * (+page - 1) : 0)
+          .limit(+limit || 20)
+          .sort(sort)
+          .populate({
+            path: "userId",
+            select: ["firstname", "lastname", "email", "profile"],
+          });
 
+        data.push({
+          userData: userData[i],
+          attendence: attendence,
+          // leavData: leavData,
+        });
+      }
       // console.log("payload", payload);
       // let attendence = await Attendance.find(payload)
       //   .skip(page > 0 ? +limit * (+page - 1) : 0)
@@ -294,7 +294,7 @@ class AttendanceController {
       //   });
       return res.status(200).json({
         success: true,
-        data: userData,
+        data: data,
       });
     } catch (error) {
       console.log("error", error);
@@ -340,7 +340,7 @@ class AttendanceController {
             console.log(
               "attendance_entries",
               attendance_entries[attendance_entries.length - 1].out ===
-                undefined
+              undefined
             );
             payload = {
               ...payload,
@@ -393,8 +393,8 @@ class AttendanceController {
               minutes > 240
                 ? 240
                 : Number(existing_attendance.workingHours) + minutes > 240
-                ? 240
-                : minutes,
+                  ? 240
+                  : minutes,
           };
         } else {
           payload = {
@@ -435,8 +435,8 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.In
-            ? "CLOCK OUT"
-            : "CLOCK IN",
+              ? "CLOCK OUT"
+              : "CLOCK IN",
       };
 
       return res.status(200).json({ success: true, data: result });
@@ -469,8 +469,8 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.Out
-            ? "CLOCK IN"
-            : "CLOCK OUT",
+              ? "CLOCK IN"
+              : "CLOCK OUT",
       };
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
@@ -512,15 +512,15 @@ class AttendanceController {
           req.query.page || req.query.limit
             ? await Attendance.paginate(criteria, options)
             : await Attendance.find(criteria).sort({
-                createdAt: -1,
-              });
+              createdAt: -1,
+            });
       } else {
         all_attendance =
           req.query.page || req.query.limit
             ? await AttendancePartTime.paginate(criteria, options)
             : await AttendancePartTime.find(criteria).sort({
-                createdAt: -1,
-              });
+              createdAt: -1,
+            });
       }
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
