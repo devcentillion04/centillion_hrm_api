@@ -55,6 +55,9 @@ const LeavesManagement = new Schema(
     rejectDate: {
       type: Date,
     },
+    differenceDate: {
+      type: Array,
+    },
   },
   {
     timestamps: true,

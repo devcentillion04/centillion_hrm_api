@@ -2,6 +2,8 @@ const moment = require("moment-timezone");
 const Attendance = require("../../../models/attendence");
 const AttendancePartTime = require("../../../models/attendence-tarine");
 const commonFunction = require("../../../common/function");
+const { UserSchema } = require("../../../models/user");
+const { LeavesManagement } = require("../../../models/leave");
 const { query } = require("express");
 class AttendanceController {
   async index(req, res) {
@@ -114,7 +116,7 @@ class AttendanceController {
   catch(error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-  async show(req, res) {
+  async  (req, res) {
     try {
       let { id } = req.params;
       let user = {};
@@ -138,18 +140,25 @@ class AttendanceController {
       }
       if (workDate) {
         let date = moment(workDate).toISOString();
-        let endOfMonth = moment(workDate).endOf('month').toISOString();
+        let endOfMonth = moment(workDate).endOf("month").toISOString();
         whereClause = {
           userId: user.userId,
         };
         whereClause["workDate"] = {
-          $gte: commonFunction.getUtcTime(date, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
-          $lte: commonFunction.getUtcTime(endOfMonth, commonFunction.timezone, "YYYY/MM/DD HH:mm:ss"),
+          $gte: commonFunction.getUtcTime(
+            date,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+          $lte: commonFunction.getUtcTime(
+            endOfMonth,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
         };
-        var dataDate =
-        {
+        var dataDate = {
           $match: whereClause,
-        }
+        };
       } else {
         whereClause = { ...whereClause };
       }
@@ -169,7 +178,7 @@ class AttendanceController {
         data: attendence.docs ? attendence.docs : attendence,
       });
     } catch (error) {
-      console.log('error', error)
+      console.log("error", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -194,6 +203,70 @@ class AttendanceController {
   }
   async userAttendence(req, res) {
     try {
+      console.log(
+        "new Date().toLocaleDateString()",
+        new Date().toLocaleDateString()
+      );
+      var todayDate = new Date().toISOString().slice(0, 10);
+      console.log("todayDate", todayDate);
+      // const userData = await UserSchema.aggregate([
+
+      //   {
+      //     $match: {
+      //       employeeType: "FULLTIME",
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "attendances",
+
+      //       pipeline: [
+      //         {
+      //           $match: {
+      //             $and: [
+      //               {
+      //                 createdAt: {
+      //                   $gt: commonFunction.getUtcTime(
+      //                     todayDate,
+      //                     commonFunction.timezone,
+      //                     "YYYY/MM/DD HH:mm:ss"
+      //                   ),
+      //                 },
+      //               },
+      //             ],
+      //           },
+      //         },
+      //       ],
+      //       as: "attendancesData",
+      //     },
+      //   },
+      // ]);
+      // console.log("userData", userData);
+      const userData = await UserSchema.find({
+        employeeType: "FULLTIME",
+      });
+      var data = [];
+      for (let i = 0; i < userData.length; i++) {
+        console.log("userData[i]._id", userData[i]._id);
+        let attendence = await Attendance.findOne({
+          userId: userData[i]._id,
+          createdAt: {
+            $gt: commonFunction.getUtcTime(
+              todayDate,
+              commonFunction.timezone,
+              "YYYY/MM/DD HH:mm:ss"
+            ),
+          },
+        });
+
+        data.push({
+          userData: userData[i],
+          attendence: attendence,
+          leavData: leavData,
+        });
+      }
+      console.log("data", data);
+
       let payload = {
         workDate: moment().startOf("day").utc(true),
       };
@@ -210,19 +283,21 @@ class AttendanceController {
         };
       }
 
-      let attendence = await Attendance.find(payload)
-        .skip(page > 0 ? +limit * (+page - 1) : 0)
-        .limit(+limit || 20)
-        .sort(sort)
-        .populate({
-          path: "userId",
-          select: ["firstname", "lastname", "email", "profile"],
-        });
+      // console.log("payload", payload);
+      // let attendence = await Attendance.find(payload)
+      //   .skip(page > 0 ? +limit * (+page - 1) : 0)
+      //   .limit(+limit || 20)
+      //   .sort(sort)
+      //   .populate({
+      //     path: "userId",
+      //     select: ["firstname", "lastname", "email", "profile"],
+      //   });
       return res.status(200).json({
         success: true,
-        data: attendence,
+        data: userData,
       });
     } catch (error) {
+      console.log("error", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -255,32 +330,30 @@ class AttendanceController {
             });
           }
 
-          let lastEntry = attendance_entries[attendance_entries.length - 1]
+          let lastEntry = attendance_entries[attendance_entries.length - 1];
 
-          console.log('lastEmntry.out', lastEntry.Out)
+          console.log("lastEmntry.out", lastEntry.Out);
           if (lastEntry.Out) {
-            let minutes = moment(lastEntry.Out).diff(
-              lastEntry.In,
-              "minutes"
+            let minutes = moment(lastEntry.Out).diff(lastEntry.In, "minutes");
+            console.log("minutes", minutes);
+
+            console.log(
+              "attendance_entries",
+              attendance_entries[attendance_entries.length - 1].out ===
+                undefined
             );
-            console.log('minutes', minutes)
-
-            console.log('attendance_entries', attendance_entries[attendance_entries.length - 1].out === undefined)
             payload = {
               ...payload,
               entry: attendance_entries,
-              workingHours: Number(existing_attendance.workingHours) + minutes
+              workingHours: Number(existing_attendance.workingHours) + minutes,
             };
-          }
-          else {
-
+          } else {
             payload = {
               ...payload,
               entry: attendance_entries,
-              workingHours: Number(existing_attendance.workingHours)
+              workingHours: Number(existing_attendance.workingHours),
             };
           }
-
         } else {
           payload = {
             ...criteria,
@@ -316,7 +389,12 @@ class AttendanceController {
           payload = {
             ...payload,
             entry: attendance_entries,
-            workingHours: minutes > 240 ? 240 : Number(existing_attendance.workingHours) + minutes > 240 ? 240 : minutes,
+            workingHours:
+              minutes > 240
+                ? 240
+                : Number(existing_attendance.workingHours) + minutes > 240
+                ? 240
+                : minutes,
           };
         } else {
           payload = {
@@ -335,12 +413,16 @@ class AttendanceController {
         attendance = await Attendance.findOneAndUpdate(criteria, payload, {
           upsert: true,
           new: true,
-        }).lean()
-      } else {
-        attendance = await AttendancePartTime.findOneAndUpdate(criteria, payload, {
-          upsert: true,
-          new: true,
         }).lean();
+      } else {
+        attendance = await AttendancePartTime.findOneAndUpdate(
+          criteria,
+          payload,
+          {
+            upsert: true,
+            new: true,
+          }
+        ).lean();
       }
 
       let last_attendance_entry = attendance?.entry.length
@@ -353,13 +435,13 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.In
-              ? "CLOCK OUT"
-              : "CLOCK IN",
+            ? "CLOCK OUT"
+            : "CLOCK IN",
       };
 
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
-      console.log('error', error)
+      console.log("error", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -387,8 +469,8 @@ class AttendanceController {
           last_attendance_entry?.In && last_attendance_entry?.Out
             ? "CLOCK IN"
             : last_attendance_entry?.Out
-              ? "CLOCK IN"
-              : "CLOCK OUT",
+            ? "CLOCK IN"
+            : "CLOCK OUT",
       };
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
@@ -426,17 +508,19 @@ class AttendanceController {
 
       let all_attendance;
       if (loggedInUser.employeeType === "FULLTIME") {
-        all_attendance = req.query.page || req.query.limit
-          ? await Attendance.paginate(criteria, options)
-          : await Attendance.find(criteria).sort({
-            createdAt: -1,
-          })
+        all_attendance =
+          req.query.page || req.query.limit
+            ? await Attendance.paginate(criteria, options)
+            : await Attendance.find(criteria).sort({
+                createdAt: -1,
+              });
       } else {
-        all_attendance = req.query.page || req.query.limit
-          ? await AttendancePartTime.paginate(criteria, options)
-          : await AttendancePartTime.find(criteria).sort({
-            createdAt: -1,
-          })
+        all_attendance =
+          req.query.page || req.query.limit
+            ? await AttendancePartTime.paginate(criteria, options)
+            : await AttendancePartTime.find(criteria).sort({
+                createdAt: -1,
+              });
       }
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
