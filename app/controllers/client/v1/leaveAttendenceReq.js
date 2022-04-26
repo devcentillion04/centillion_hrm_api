@@ -82,12 +82,14 @@ class leaveAttendenceController {
                     teamLeader: 1
                 }
             );
+            let userDataById = await UserSchema.findOne({ employeeType: "ADMIN" });
+
             let data = {
                 ...req.body,
                 startDate: moment(req.body.startDate).utc(false),
                 endDate: moment(req.body.endDate).utc(false),
                 requestedTo: userData.teamLeader,
-                userId: req.currentUser._id,
+                userId: userDataById._id ? userDataById._id : "61d2971975cf2724596a05be",
                 status: "Pending"
             }
             let resData = await processData(req.body, data, userData);
@@ -99,6 +101,7 @@ class leaveAttendenceController {
                 return res.status(500).json({ success: false, message: resData.message });
             }
         } catch (error) {
+            console.log('error', error)
             requestLogs.error("Error while calling create api UserId :- " + req.currentUser._id + " ,Error :- " + JSON.stringify(error));
             return res.status(500).json({ success: false, message: error.message });
         }

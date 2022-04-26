@@ -51,6 +51,9 @@ const leaveAttendenceReqSchema = new Schema(
         totalDay: {
             type: Number,
         },
+        type: {
+            type: String,
+        },
         requestedTo: {
             type: mongoose.Types.ObjectId,
             ref: "User",
