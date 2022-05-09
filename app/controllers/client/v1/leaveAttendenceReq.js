@@ -34,7 +34,7 @@ class leaveAttendenceController {
         }
         var populateData = {
             path: "userId",
-            select: ["email", "firstname", "lastname", "profile"],
+            select: ["email", "firstname", "lastname", "profile", "totalAvailablePaidLeave", "designation"],
         };
         const options = {
             page: req.query.page || 1,
@@ -54,7 +54,7 @@ class leaveAttendenceController {
                     })
                     .populate({
                         path: "userId",
-                        select: ["firstname", "lastname", "email", "profile"],
+                        select: ["firstname", "lastname", "email", "profile", "totalAvailablePaidLeave", "designation"],
                     });
         return res
             .status(200)
@@ -88,11 +88,13 @@ class leaveAttendenceController {
                 ...req.body,
                 startDate: moment(req.body.startDate).utc(false),
                 endDate: moment(req.body.endDate).utc(false),
-                requestedTo: userData.teamLeader,
-                userId: userDataById._id ? userDataById._id : "61d2971975cf2724596a05be",
+                requestedTo: userDataById?._id ? userDataById?._id : "61d2971975cf2724596a05be",
+                userId: req?.currentUser?._id,
                 status: "Pending"
             }
+            console.log('data', data)
             let resData = await processData(req.body, data, userData);
+            console.log('resData', resData)
             if (resData && resData.data && resData.isCreatedFlag && Object.keys(resData.data).length > 0) {
                 let reqData = new leaveAttendenceReqSchema(resData.data);
                 await reqData.save();
@@ -120,7 +122,7 @@ class leaveAttendenceController {
                 _id: req.params.id
             }).populate({
                 path: "userId",
-                select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
+                select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id", "totalAvailableOptionalLeave"],
             });
             let isUpdateFlag = false;
             if (requestedData) {
@@ -157,6 +159,9 @@ class leaveAttendenceController {
                     if (requestedData.type == "UnpaidLeave") {
                         data.isPaid = false;
                     }
+                    if (requestedData.type == "OptionalLeave") {
+                        data.isOptional = true;
+                    }
 
                     if (data.isPaid == true) {
                         requestedData.userId.totalAvailablePaidLeave =
@@ -165,6 +170,10 @@ class leaveAttendenceController {
                     if (data.isPaid == false) {
                         requestedData.userId.totalUnpaidLeave =
                             requestedData.userId.totalUnpaidLeave + requestedData.totalDay;
+                    }
+                    if (data.isOptional == true) {
+                        requestedData.userId.totalAvailableOptionalLeave =
+                            requestedData.userId.totalAvailableOptionalLeave + requestedData.totalDay;
                     }
 
                     let leaveData = await new LeavesManagement({
@@ -220,7 +229,7 @@ class leaveAttendenceController {
                 status: "Pending"
             }).populate({
                 path: "userId",
-                select: ["firstname", "lastname", "email", "profile"],
+                select: ["firstname", "lastname", "email", "profile", "totalAvailablePaidLeave", "designation"],
             });
             return res.status(200).json({ success: true, message: "Successfully get all requests documents", data: requestedData });
         } catch (error) {
@@ -345,8 +354,8 @@ class leaveAttendenceController {
 const processData = (reqData, data, userData) => {
     return new Promise((resolve, reject) => {
 
-        let start = moment(reqData.startDate, "YYYY-MM-DD").utc(false);
-        let currentDate = moment().format("YYYY-MM-DD");
+        let start = moment(reqData.startDate, "YYYY-MM-DD")
+        let currentDate = moment()
         let leaveFlag = moment(currentDate).isAfter(start, "days");
         let leaveDaysCount = commonFunction.workingDaysCount(data.startDate, data.endDate);
         let publicHolidayList = {
@@ -428,7 +437,7 @@ const processData = (reqData, data, userData) => {
                 if (
                     (userData.totalAvailablePaidLeave >= data.totalDay &&
                         data.type == "PaidLeave") ||
-                    data.type == "UnpaidLeave"
+                    data.type == "UnpaidLeave" || data.type == "OptionalLeave"
                 ) {
                     resolve({
                         isCreatedFlag: true,

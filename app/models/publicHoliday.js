@@ -18,6 +18,10 @@ const holidaySchema = new Schema(
       type: Boolean,
       default: false,
     },
+    optionalHoliday: {
+      type: Boolean,
+      default: false,
+    },
     year: {
       type: String,
     }

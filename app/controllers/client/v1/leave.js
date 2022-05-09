@@ -39,7 +39,7 @@ class LeaveController {
     }
     var populateData = {
       path: "userId",
-      select: ["email", "firstname", "lastname", "profile"],
+      select: ["email", "firstname", "lastname", "profile", "totalAvailablePaidLeave", "profile", "designation", "totalAvailableOptionalLeave"],
     };
     const options = {
       page: req.query.page || 1,
@@ -52,13 +52,13 @@ class LeaveController {
       req.query.page || req.query.limit
         ? await LeavesManagement.paginate(criteria, options)
         : await LeavesManagement.find({ criteria })
-            .sort({
-              createdAt: -1,
-            })
-            .populate({
-              path: "userId",
-              select: ["firstname", "lastname", "email", "profile"],
-            });
+          .sort({
+            createdAt: -1,
+          })
+          .populate({
+            path: "userId",
+            select: ["firstname", "lastname", "email", "profile", "totalAvailablePaidLeave", "profile", "designation", "totalAvailableOptionalLeave"],
+          });
 
     return res.status(200).json({ success: true, data: leave });
   }
@@ -143,7 +143,8 @@ class LeaveController {
         if (
           (userData.totalAvailablePaidLeave >= data.totalDay &&
             data.type == "PaidLeave") ||
-          data.type == "UnpaidLeave"
+          data.type == "UnpaidLeave" ||
+          data.type == "OptionalLeave"
         ) {
           let { id } = req.params;
           if (data.type == "PaidLeave") {
@@ -151,6 +152,9 @@ class LeaveController {
           }
           if (data.type == "UnpaidLeave") {
             data.isPaid = false;
+          }
+          if (data.type == "OptionalLeave") {
+            data.isOptional = true;
           }
 
           let leaveData = await new LeavesManagement({
@@ -161,9 +165,9 @@ class LeaveController {
           await leaveData.save(); //create leave document
           leavesLogs.info(
             "Leave data created successfully for userId :-" +
-              req.currentUser._id +
-              "Leave DocumentId :-" +
-              leaveData._id
+            req.currentUser._id +
+            "Leave DocumentId :-" +
+            leaveData._id
           );
           return res.status(200).json({ success: true, data: leaveData });
         } else {
@@ -358,9 +362,10 @@ class LeaveController {
         _id: req.params.id,
       }).populate({
         path: "userId",
-        select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id"],
+        select: ["totalAvailablePaidLeave", "totalUnpaidLeave", "_id", "totalAvailableOptionalLeave"],
       });
 
+      console.log('leaveData.totalDay', leaveData.totalDay)
       if (leaveData.isPaid == true) {
         leaveData.userId.totalAvailablePaidLeave =
           leaveData.userId.totalAvailablePaidLeave - leaveData.totalDay;
@@ -369,6 +374,10 @@ class LeaveController {
         leaveData.userId.totalUnpaidLeave =
           leaveData.userId.totalUnpaidLeave + leaveData.totalDay;
       }
+      if (leaveData.isOptional == true) {
+        leaveData.userId.totalAvailableOptionalLeave =
+          leaveData.userId.totalAvailableOptionalLeave + leaveData.totalDay;
+      }
       await UserSchema.updateOne(
         {
           _id: leaveData.userId._id,
@@ -376,6 +385,7 @@ class LeaveController {
         {
           totalAvailablePaidLeave: leaveData.userId.totalAvailablePaidLeave,
           totalUnpaidLeave: leaveData.userId.totalUnpaidLeave,
+          totalAvailableOptionalLeave: leaveData.userId.totalAvailableOptionalLeave,
         }
       );
       await LeavesManagement.updateOne(
@@ -481,11 +491,29 @@ class LeaveController {
     }
   }
 
+  async updatePublicHolidayList(req, res) {
+    try {
+      requestLogs.info("updatePublicHolidayList api , Requested params :- " + req.params.id + " Current User Id :- " + req.currentUser._id);
+      let data = await holidaySchema.updateOne({
+        _id: req.params.id,
+        isDeleted: false
+      }, {
+        optionalHoliday: req.body.optionalHoliday,
+      });
+      // return res.status(200).json({ success: true,data:data, message: "Designation updated successfully" });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+
   async getUpcomingLeaves(req, res) {
+    console.log('req.currentUser._id', req.currentUser._id)
     try {
       let date = moment();
       leavesLogs.info(
         "Request data of getUpcomingLeaves api " + req.currentUser._id
+
       );
       let condition = {
         isDeleted: {
@@ -661,6 +689,11 @@ class LeaveController {
           leaveTo: 1,
         }
       );
+      let currentApproveList = await LeavesManagement.find(
+        {
+          userId: req.currentUser._id,
+          status: "approved",
+        })
       let condition = {
         clockOut: {
           $gte: commonFunction.getUtcTime(startOfMonth, "-5:30", "YYYY/MM/DD"),
@@ -668,13 +701,17 @@ class LeaveController {
         },
         userId: req.currentUser._id,
       };
-      let currentMonthAttendance = await Attendance.find(condition, {
-        clockIn: 1,
+      let currentMonthAttendance = await Attendance.find({
+        userId: req.currentUser._id,
+        wordDate: new Date().getMonth()
       });
       let data = await getTotalWorkingDays(currentYear);
       let userList = await UserSchema.find({ isDeleted: false });
       let all_attendance = await Attendance.find({
         workDate: moment().startOf("day").utc(true),
+      });
+      let all_User_Attendance = await Attendance.find({
+        userId: req.currentUser._id,
       });
       let resData = {
         holidayList:
@@ -683,7 +720,10 @@ class LeaveController {
             : holidayList,
         pendingLeaveListCount: pendingLeaveList?.length,
         approveList: approveList?.length,
+        currentApproveList: currentApproveList?.length,
         totalAttendance: all_attendance?.length,
+        userTotalAttendance: all_User_Attendance?.length,
+        currentMonthAttendance: currentMonthAttendance?.length,
         totalDaysInMonth: data?.totalDaysInMonth,
         actualWorkingDaysInMonth: data?.actualWorkingDaysInMonth,
         userList: userList && userList?.length,

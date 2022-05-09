@@ -125,9 +125,27 @@ class AttendanceController {
       } else {
         user = { ...req.params._id };
       }
-      let { page, limit, sortField, sortValue, workDate } = req.query;
+      let { page, limit, sortField, sortValue, startDate, endDate } = req.query;
+      var getDaysBetweenDates = function (startDate, endDate) {
+        var now = startDate.clone(), dates = [];
+
+        while (now.isSameOrBefore(endDate)) {
+          dates.push(now.format('MM/DD/YYYY'));
+          now.add(1, 'days');
+        }
+        return dates;
+      };
+      const startOfMonth = moment().startOf('month');
+      const endOfMonth = moment();
+      var startDate1 = moment(startDate);
+      var endDate1 = moment(endDate);
+
+      var dateList;
+      dateList = !startDate && !endDate ? getDaysBetweenDates(startOfMonth, endOfMonth) : getDaysBetweenDates(startDate1, endDate1);
 
       let sort = {};
+      let data = [];
+      let attendence;
       let whereClause = {};
       if (sortField) {
         sort = {
@@ -138,20 +156,21 @@ class AttendanceController {
           createdAt: -1,
         };
       }
-      if (workDate) {
-        let date = moment(workDate).toISOString();
-        let endOfMonth = moment(workDate).endOf("month").toISOString();
+      if (startDate && endDate) {
+        let startDateRecord = moment(startDate).toISOString();
+        let endDateReacord = moment(endDate).toISOString();
+
         whereClause = {
           userId: user.userId,
         };
         whereClause["workDate"] = {
           $gte: commonFunction.getUtcTime(
-            date,
+            startDateRecord,
             commonFunction.timezone,
             "YYYY/MM/DD HH:mm:ss"
           ),
           $lte: commonFunction.getUtcTime(
-            endOfMonth,
+            endDateReacord,
             commonFunction.timezone,
             "YYYY/MM/DD HH:mm:ss"
           ),
@@ -160,22 +179,65 @@ class AttendanceController {
           $match: whereClause,
         };
       } else {
-        whereClause = { ...whereClause };
+        let startDateRecord = moment(startOfMonth).toISOString();
+        let endDateReacord = moment(endOfMonth).toISOString();
+
+        whereClause = {
+          userId: user.userId,
+        };
+        whereClause["workDate"] = {
+          $gte: commonFunction.getUtcTime(
+            startDateRecord,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+          $lte: commonFunction.getUtcTime(
+            endDateReacord,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+        };
+        var dataDate = {
+          $match: whereClause,
+        };
+        // whereClause = { ...whereClause };
+      }
+      for (let i = 0; i < dateList.length; i++) {
+        whereClause = {
+          workDate: dateList[i],
+          ...whereClause
+        }
+        attendence = await Attendance.find({ ...user, ...whereClause })
+          .skip(page > 0 ? +limit * (+page - 1) : 0)
+          .limit(+limit || 20)
+          .sort({
+            createdAt: -1,
+          })
+          .populate({
+            path: "userId",
+            select: ["firstname", "lastname", "email", "profile"],
+          });
+        let dateAttendence = attendence?.find((item) => moment(item.workDate).format('MM/DD/YYYY') === dateList[i])
+        data.push({
+          date: dateList[i],
+          attendence: dateAttendence,
+        });
       }
 
-      let attendence = await Attendance.find({ ...user, ...whereClause })
-        .skip(page > 0 ? +limit * (+page - 1) : 0)
-        .limit(+limit || 20)
-        .sort({
-          createdAt: -1,
-        })
-        .populate({
-          path: "userId",
-          select: ["firstname", "lastname", "email", "profile"],
-        });
+      // console.log('data', data)
+      // let attendence = await Attendance.find({ ...user, ...whereClause })
+      //   .skip(page > 0 ? +limit * (+page - 1) : 0)
+      //   .limit(+limit || 20)
+      //   .sort({
+      //     createdAt: -1,
+      //   })
+      //   .populate({
+      //     path: "userId",
+      //     select: ["firstname", "lastname", "email", "profile"],
+      //   });
       return res.status(200).json({
         success: true,
-        data: attendence,
+        data: data,
       });
     } catch (error) {
       console.log("error", error);
@@ -249,6 +311,7 @@ class AttendanceController {
       let { page, limit, sortField, sortValue } = req.query;
       let sort = {};
       let whereClause = {};
+
       if (sortField) {
         sort = {
           [sortField]: sortValue === "ASC" ? 1 : -1,
@@ -258,16 +321,23 @@ class AttendanceController {
           name: 1,
         };
       }
+      const options = {
+        page: page || 1,
+        limit: limit || 10,
+        sort: { createdAt: -1 },
+      };
+
       for (let i = 0; i < userData.length; i++) {
-        console.log("userData[i]._id", userData[i]._id);
+        whereClause = {
+          userId: userData[i]._id,
+          createdAt: {
+            $gt: payload?.workDate,
+          },
+        }
         let attendence = await Attendance.findOne({
           userId: userData[i]._id,
           createdAt: {
-            $gt: commonFunction.getUtcTime(
-              todayDate,
-              commonFunction.timezone,
-              "YYYY/MM/DD HH:mm:ss"
-            ),
+            $gt: payload?.workDate,
           },
         }).skip(page > 0 ? +limit * (+page - 1) : 0)
           .limit(+limit || 20)
@@ -276,6 +346,7 @@ class AttendanceController {
             path: "userId",
             select: ["firstname", "lastname", "email", "profile"],
           });
+        console.log('attendence', attendence)
 
         data.push({
           userData: userData[i],

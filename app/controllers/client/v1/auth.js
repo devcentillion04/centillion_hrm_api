@@ -71,12 +71,13 @@ class AuthController {
   }
   async register(req, res) {
     try {
-      let { email } = req.body;
+      let { email, joiningDate } = req.body;
+      console.log('req.body', req.body)
       const emailFind = await UserSchema.findOne({ email });
       if (emailFind) {
         throw new Error("email is already taken");
       } else {
-        let joiningMonth = moment().format("MM");
+        let joiningMonth = moment(joiningDate).format("MM");
         let totalMonth = 12 - (parseInt(joiningMonth) - 1);
         let totalPaidLeave = totalMonth * 1.5;
         let payload = {

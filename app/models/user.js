@@ -103,6 +103,10 @@ const UserSchema = new Schema(
     totalAvailablePaidLeave: {
       type: Number,
     },
+    totalAvailableOptionalLeave: {
+      type: Number,
+      default: 0,
+    },
     joiningDate: {
       type: Date,
     },
