@@ -701,10 +701,24 @@ class LeaveController {
         },
         userId: req.currentUser._id,
       };
+      startOfMonth = moment().startOf('month');
+      endOfMonth = moment();
       let currentMonthAttendance = await Attendance.find({
         userId: req.currentUser._id,
-        wordDate: new Date().getMonth()
+        workDate: {
+          $gte: commonFunction.getUtcTime(
+            startOfMonth,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+          $lte: commonFunction.getUtcTime(
+            endOfMonth,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+        },
       });
+      console.log('currentMonthAttendance', currentMonthAttendance)
       let data = await getTotalWorkingDays(currentYear);
       let userList = await UserSchema.find({ isDeleted: false });
       let all_attendance = await Attendance.find({
