@@ -24,7 +24,7 @@ class UserController {
     const options = {
       page: req.query.page || 1,
       limit: req.query.limit || 10,
-      sort: { [sort_key]: sort_direction },
+      // sort: { [sort_key]: sort_direction },
     };
 
     let user =
