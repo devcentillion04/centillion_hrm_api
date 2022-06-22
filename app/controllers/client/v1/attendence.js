@@ -301,6 +301,7 @@ class AttendanceController {
       // console.log("userData", userData);
       const userData = await UserSchema.find({
         employeeType: "FULLTIME",
+        isDeleted: false,
       });
       var data = [];
 
@@ -434,49 +435,50 @@ class AttendanceController {
             },
           };
         }
-      } else {
-        existing_attendance = await AttendancePartTime.findOne(criteria);
-        if (existing_attendance) {
-          let attendance_entries = existing_attendance.entry;
-          let last_attendance_entry =
-            attendance_entries[attendance_entries.length - 1];
-          if (last_attendance_entry?.In && last_attendance_entry?.Out) {
-            let entry_payload = {
-              In: moment().utc(true).toISOString(),
-            };
-            attendance_entries.push(entry_payload);
-          } else {
-            last_attendance_entry.Out = moment().utc(false).toISOString();
-            Object.assign(payload, {
-              clockOut: moment().utc(true).toISOString(),
-            });
-          }
-
-          let minutes = moment(last_attendance_entry.Out).diff(
-            last_attendance_entry.In,
-            "minutes"
-          );
-
-          payload = {
-            ...payload,
-            entry: attendance_entries,
-            workingHours:
-              minutes > 240
-                ? 240
-                : Number(existing_attendance.workingHours) + minutes > 240
-                  ? 240
-                  : minutes,
-          };
-        } else {
-          payload = {
-            ...criteria,
-            clockIn: moment().utc(true).toISOString(),
-            entry: {
-              In: moment().utc(true).toISOString(),
-            },
-          };
-        }
       }
+      // else {
+      //   existing_attendance = await AttendancePartTime.findOne(criteria);
+      //   if (existing_attendance) {
+      //     let attendance_entries = existing_attendance.entry;
+      //     let last_attendance_entry =
+      //       attendance_entries[attendance_entries.length - 1];
+      //     if (last_attendance_entry?.In && last_attendance_entry?.Out) {
+      //       let entry_payload = {
+      //         In: moment().utc(true).toISOString(),
+      //       };
+      //       attendance_entries.push(entry_payload);
+      //     } else {
+      //       last_attendance_entry.Out = moment().utc(false).toISOString();
+      //       Object.assign(payload, {
+      //         clockOut: moment().utc(true).toISOString(),
+      //       });
+      //     }
+
+      //     let minutes = moment(last_attendance_entry.Out).diff(
+      //       last_attendance_entry.In,
+      //       "minutes"
+      //     );
+
+      //     payload = {
+      //       ...payload,
+      //       entry: attendance_entries,
+      //       workingHours:
+      //         minutes > 240
+      //           ? 240
+      //           : Number(existing_attendance.workingHours) + minutes > 240
+      //             ? 240
+      //             : minutes,
+      //     };
+      //   } else {
+      //     payload = {
+      //       ...criteria,
+      //       clockIn: moment().utc(true).toISOString(),
+      //       entry: {
+      //         In: moment().utc(true).toISOString(),
+      //       },
+      //     };
+      //   }
+      // }
 
       let attendance;
 
@@ -485,16 +487,17 @@ class AttendanceController {
           upsert: true,
           new: true,
         }).lean();
-      } else {
-        attendance = await AttendancePartTime.findOneAndUpdate(
-          criteria,
-          payload,
-          {
-            upsert: true,
-            new: true,
-          }
-        ).lean();
       }
+      //  else {
+      //   attendance = await AttendancePartTime.findOneAndUpdate(
+      //     criteria,
+      //     payload,
+      //     {
+      //       upsert: true,
+      //       new: true,
+      //     }
+      //   ).lean();
+      // }
 
       let last_attendance_entry = attendance?.entry.length
         ? attendance?.entry[attendance?.entry.length - 1]
@@ -528,9 +531,10 @@ class AttendanceController {
       let attendance;
       if (loggedInUser.employeeType === "FULLTIME") {
         attendance = await Attendance.findOne(criteria).lean();
-      } else {
-        attendance = await AttendancePartTime.findOne(criteria).lean();
       }
+      // else {
+      //   attendance = await AttendancePartTime.findOne(criteria).lean();
+      // }
       let last_attendance_entry = attendance?.entry.length
         ? attendance?.entry[attendance?.entry.length - 1]
         : null;
@@ -559,7 +563,7 @@ class AttendanceController {
       let criteria = {
         userId: loggedInUser._id,
       };
-      let { sortField, sortValue } = req.query;
+      let { sortField, sortValue, startDate, endDate } = req.query;
       let sort = {};
       if (sortField) {
         sort = {
@@ -568,6 +572,23 @@ class AttendanceController {
       } else {
         sort = {
           createdAt: -1,
+        };
+      }
+      var startDateRecord = moment(startDate);
+      var endDateReacord = moment(endDate);
+
+      if (startDate && endDate) {
+        criteria["workDate"] = {
+          $gte: commonFunction.getUtcTime(
+            startDateRecord,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
+          $lte: commonFunction.getUtcTime(
+            endDateReacord,
+            commonFunction.timezone,
+            "YYYY/MM/DD HH:mm:ss"
+          ),
         };
       }
       let options = {
@@ -585,14 +606,15 @@ class AttendanceController {
             : await Attendance.find(criteria).sort({
               createdAt: -1,
             });
-      } else {
-        all_attendance =
-          req.query.page || req.query.limit
-            ? await AttendancePartTime.paginate(criteria, options)
-            : await AttendancePartTime.find(criteria).sort({
-              createdAt: -1,
-            });
       }
+      // else {
+      //   all_attendance =
+      //     req.query.page || req.query.limit
+      //       ? await AttendancePartTime.paginate(criteria, options)
+      //       : await AttendancePartTime.find(criteria).sort({
+      //         createdAt: -1,
+      //       });
+      // }
       return res.status(200).json({ success: true, data: all_attendance });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });

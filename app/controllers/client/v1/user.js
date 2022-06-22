@@ -161,7 +161,8 @@ class UserController {
       });
 
       let peers = await UserSchema.find({
-        teamLeader: req.currentUser.teamLeader
+        teamLeader: req.currentUser.teamLeader,
+        isDeleted: false,
       }, {
         firstname: 1,
         lastname: 1,

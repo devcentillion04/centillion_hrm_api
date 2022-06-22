@@ -21,7 +21,7 @@ class LeaveController {
       path: "role",
       select: ["name"],
     });
-    let { page, limit, sortField, sortValue, sort_key, sort_direction } =
+    let { page, limit, sortField, sortValue, sort_key, sort_direction, startDate, endDate } =
       req.query;
     let sort = {};
     let criteria = { isDeleted: false };
@@ -41,6 +41,24 @@ class LeaveController {
       path: "userId",
       select: ["email", "firstname", "lastname", "profile", "totalAvailablePaidLeave", "profile", "designation", "totalAvailableOptionalLeave"],
     };
+    var startDateRecord = moment(startDate);
+    var endDateReacord = moment(endDate);
+
+    if (startDate && endDate) {
+      criteria["leaveFrom"] = {
+        $gte: commonFunction.getUtcTime(
+          startDateRecord,
+          commonFunction.timezone,
+          "YYYY/MM/DD HH:mm:ss"
+        ),
+        $lte: commonFunction.getUtcTime(
+          endDateReacord,
+          commonFunction.timezone,
+          "YYYY/MM/DD HH:mm:ss"
+        ),
+      };
+    }
+
     const options = {
       page: req.query.page || 1,
       limit: req.query.limit || 10,
